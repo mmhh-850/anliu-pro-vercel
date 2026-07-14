@@ -1,6 +1,7 @@
 const crypto = require('crypto');
+
 const XDD_APP_ID = '19997';
-const XDD_APP_SECRET = process.env.XDD_APP_SECRET || 'c0b8284668a14262b4f57cb85dd635ac';
+const XDD_APP_SECRET = process.env.XDD_APP_SECRET;
 const XDD_GATEWAY = 'https://gateway.xddpay.com';
 
 function md5(text) {
