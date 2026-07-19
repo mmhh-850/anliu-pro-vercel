@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暗流Pro</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+  .container { display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: #161b22; border-bottom: 1px solid #30363d; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .topbar h1 { font-size: 18px; color: #58a6ff; }
+  .user-area { display: flex; align-items: center; gap: 12px; }
+  .btn { padding: 6px 16px; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 13px; }
+  .btn:hover { background: #30363d; }
+  .btn-primary { background: #238636; border-color: #2ea043; color: #fff; }
+  .btn-primary:hover { background: #2ea043; }
+  .price-tag { background: #1f6feb; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; width: 380px; }
+  .modal h2 { font-size: 20px; margin-bottom: 16px; color: #f0f6fc; }
+  .modal input { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; }
+  .modal .btn { width: 100%; margin-top: 8px; }
+  .modal .tip { font-size: 12px; color: #8b949e; margin-top: 12px; text-align: center; }
+  .iframe-wrapper { flex: 1; position: relative; }
+  .iframe-wrapper iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; }
+  .login-prompt { text-align: center; padding: 80px 20px; }
+  .login-prompt h2 { font-size: 24px; margin-bottom: 12px; }
+  .login-prompt p { color: #8b949e; margin-bottom: 24px; }
+  .banner { background: linear-gradient(135deg, #1f6feb, #238636); padding: 12px 20px; text-align: center; font-size: 14px; color: #fff; }
+  .banner a { color: #ffd666; text-decoration: underline; cursor: pointer; }
+  .expire-warn { color: #f85149; font-size: 12px; margin-left: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <h1>暗流Pro</h1>
+    <div class="user-area" id="userArea">
+      <span id="userEmail" style="font-size:13px;color:#8b949e;"></span>
+      <span id="planBadge" class="price-tag" style="display:none;">Pro</span>
+      <button class="btn btn-primary" id="btnUpgrade" onclick="showPayModal()">升级会员 ￥9.9/月</button>
+      <button class="btn" id="btnLogin" onclick="showLoginModal()">登录</button>
+      <button class="btn" id="btnLogout" onclick="logout()" style="display:none;">退出</button>
+    </div>
+  </div>
+  <div class="banner" id="banner" style="display:none;">
+    暗流Pro实战数据平台 · <a onclick="showPayModal()">立即订阅仅需 ￥9.9/月</a>
+    <span id="expireWarn" class="expire-warn"></span>
+  </div>
+  <div class="iframe-wrapper" id="iframeWrapper">
+    <div class="login-prompt" id="loginPrompt">
+      <h2>暗流Pro - 专业数字货币分析平台</h2>
+      <p>登录后即可查看实时多空数据、筹码分布、机构订单块等专业指标</p>
+      <button class="btn btn-primary" onclick="showLoginModal()">登录 / 注册</button>
+    </div>
+    <iframe id="mainFrame" style="display:none;" allow="clipboard-write"></iframe>
+  </div>
+</div>
+
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h2>登录 / 注册</h2>
+    <input type="email" id="loginEmail" placeholder="输入邮箱" autocomplete="email">
+    <input type="password" id="loginPassword" placeholder="输入密码（6位以上）" autocomplete="new-password">
+    <button class="btn btn-primary" onclick="login()">登录 / 注册</button>
+    <button class="btn" onclick="closeLoginModal()">取消</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <h2>升级暗流Pro会员</h2>
+    <p style="color:#8b949e;margin-bottom:12px;">￥9.9 / 月 · 解锁全部专业指标</p>
+    <button class="btn btn-primary" id="btnWechatPay" onclick="pay(1)">微信支付 ￥9.9</button>
+    <button class="btn" id="btnAlipay" onclick="pay(2)" style="margin-top:8px;">支付宝 ￥9.9</button>
+    <button class="btn" onclick="closePayModal()" style="margin-top:8px;">取消</button>
+    <div class="tip">支付成功后自动开通，有效期30天</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
+const PROXY_BASE = '/api/proxy';
+
+let supabase = null;
+let currentUser = null;
+
+// ===== UI 交互函数（优先定义，不依赖 Supabase）=====
+function showLoginModal() { document.getElementById('loginModal').classList.add('active'); }
+function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+function showPayModal() { document.getElementById('payModal').classList.add('active'); }
+function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
+
+// ===== 尝试初始化 Supabase（失败不阻断 UI）=====
+(function initSupabase() {
+  try {
+    if (!window.supabase) throw new Error('Supabase SDK 未加载，请检查网络连接或刷新重试');
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    init();
+  } catch (e) {
+    console.warn('Supabase 初始化失败:', e.message);
+    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+  }
+})();
+
+async function init() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      onLogin();
+    }
+  } catch (e) {
+    console.warn('获取会话失败:', e.message);
+  }
+}
+
+async function login() {
+  if (!supabase) return alert('登录服务暂不可用，请刷新页面重试');
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return alert('请填写邮箱和密码');
+  if (password.length < 6) return alert('密码至少6位');
+
+  try {
+    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error && error.message.includes('Invalid login')) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) return alert('注册失败: ' + signUpError.message);
+      if (signUpData.session) {
+        currentUser = signUpData.user;
+        onLogin();
+        return;
+      }
+      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');
+      closeLoginModal();
+      return;
+    }
+    if (error) return alert('登录失败: ' + error.message);
+    currentUser = data.user;
+    onLogin();
+  } catch (e) {
+    alert('登录请求失败，请检查网络后重试');
+  }
+}
+
+async function onLogin() {
+  document.getElementById('loginPrompt').style.display = 'none';
+  document.getElementById('mainFrame').style.display = 'block';
+  document.getElementById('btnLogin').style.display = 'none';
+  document.getElementById('btnLogout').style.display = 'inline-block';
+  document.getElementById('btnUpgrade').style.display = 'inline-block';
+  document.getElementById('userEmail').textContent = currentUser.email;
+  document.getElementById('banner').style.display = 'block';
+  closeLoginModal();
+
+  try {
+    const { data } = await supabase.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
+      document.getElementById('planBadge').style.display = 'inline';
+      document.getElementById('btnUpgrade').style.display = 'none';
+      document.getElementById('banner').style.display = 'none';
+      loadFrame();
+    }
+  } catch (e) {
+    console.warn('查询订阅状态失败:', e.message);
+  }
+}
+
+function loadFrame() {
+  const iframe = document.getElementById('mainFrame');
+  iframe.src = PROXY_BASE + '/pro/';
+}
+
+async function logout() {
+  if (!supabase) return;
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    console.warn('登出失败:', e.message);
+  }
+  currentUser = null;
+  document.getElementById('loginPrompt').style.display = 'block';
+  document.getElementById('mainFrame').style.display = 'none';
+  document.getElementById('mainFrame').src = '';
+  document.getElementById('btnLogin').style.display = 'inline-block';
+  document.getElementById('btnLogout').style.display = 'none';
+  document.getElementById('btnUpgrade').style.display = 'none';
+  document.getElementById('planBadge').style.display = 'none';
+  document.getElementById('banner').style.display = 'none';
+  document.getElementById('userEmail').textContent = '';
+}
+
+async function pay(payType) {
+  if (!currentUser) return alert('请先登录');
+  const orderNo = 'ANLIU' + Date.now();
+  try {
+    const resp = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_no: orderNo, subject: '暗流Pro月费会员', pay_type: payType, money: 9.9, user_id: currentUser.id })
+    });
+    const result = await resp.json();
+    if (result.url) {
+      window.open(result.url, '_blank');
+      closePayModal();
+      startPolling(orderNo);
+    } else {
+      alert('创建订单失败: ' + (result.error || '未知错误'));
+    }
+  } catch (e) {
+    alert('支付请求失败，请稍后重试');
+  }
+}
+
+function startPolling(orderNo) {
+  const interval = setInterval(async () => {
+    try {
+      const resp = await fetch('/api/query?order_no=' + orderNo);
+      const data = await resp.json();
+      if (data.result === 'success') {
+        clearInterval(interval);
+        alert('支付成功！会员已开通');
+        document.getElementById('planBadge').style.display = 'inline';
+        document.getElementById('btnUpgrade').style.display = 'none';
+        document.getElementById('banner').style.display = 'none';
+        loadFrame();
+      }
+    } catch (e) {}
+  }, 3000);
+  setTimeout(() => clearInterval(interval), 300000);
+}
+</script>
+</body>
+</html>
