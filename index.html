@@ -32,6 +32,8 @@
   .banner { background: linear-gradient(135deg, #1f6feb, #238636); padding: 12px 20px; text-align: center; font-size: 14px; color: #fff; }
   .banner a { color: #ffd666; text-decoration: underline; cursor: pointer; }
   .expire-warn { color: #f85149; font-size: 12px; margin-left: 8px; }
+  .modal .tip a { color: #58a6ff; cursor: pointer; text-decoration: none; }
+  .modal .tip a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -60,21 +62,35 @@
   </div>
 </div>
 
+<!-- 弹窗1：登录 -->
 <div class="modal-overlay" id="loginModal">
   <div class="modal">
-    <h2>登录 / 注册</h2>
-    <input type="email" id="loginEmail" placeholder="输入邮箱" autocomplete="email">
-    <input type="password" id="loginPassword" placeholder="输入密码（6位以上）" autocomplete="new-password">
+    <h2>登录</h2>
+    <input type="email" id="loginEmail" placeholder="请输入邮箱" autocomplete="email">
+    <input type="password" id="loginPassword" placeholder="请输入密码">
+    <button class="btn btn-primary" onclick="doLogin()">登录</button>
+    <button class="btn" onclick="closeLoginModal()">取消</button>
+    <div class="tip">没有账号？<a onclick="closeLoginModal();showRegisterModal();">去注册</a></div>
+  </div>
+</div>
+
+<!-- 弹窗2：注册 -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal">
+    <h2>注册</h2>
+    <input type="email" id="regEmail" placeholder="请输入邮箱" autocomplete="email">
+    <input type="password" id="regPassword" placeholder="请输入密码">
+    <input type="password" id="regConfirmPassword" placeholder="请再次输入密码">
     <select id="securityQuestion">
-      <option value="">选择密保问题（注册时必填）</option>
       <option value="你的出生城市是？">你的出生城市是？</option>
       <option value="你的小学名称是？">你的小学名称是？</option>
       <option value="你的宠物名字是？">你的宠物名字是？</option>
       <option value="你最喜欢的电影是？">你最喜欢的电影是？</option>
     </select>
-    <input type="text" id="securityAnswer" placeholder="密保答案">
-    <button class="btn btn-primary" onclick="login()">登录 / 注册</button>
-    <button class="btn" onclick="closeLoginModal()">取消</button>
+    <input type="text" id="securityAnswer" placeholder="请输入密保答案">
+    <button class="btn btn-primary" onclick="doRegister()">注册</button>
+    <button class="btn" onclick="closeRegisterModal()">取消</button>
+    <div class="tip">已有账号？<a onclick="closeRegisterModal();showLoginModal();">去登录</a></div>
   </div>
 </div>
 
@@ -98,94 +114,84 @@ const PROXY_BASE = '/api/proxy';
 let sb = null;
 let currentUser = null;
 
-// ========== UI Functions (always available, defined before any init) ==========
-function showLoginModal() { document.getElementById('loginModal').classList.add('active'); }
-function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
-function showPayModal() { document.getElementById('payModal').classList.add('active'); }
-function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
-
-// ========== Supabase Initialization (safe, won't block script) ==========
-(function() {
-  try {
-    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      init();
-    } else {
-      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
-      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
-      document.getElementById('btnLogin').disabled = true;
-    }
-  } catch (e) {
-    console.error('Supabase 初始化失败:', e);
-    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
-    document.getElementById('btnLogin').disabled = true;
-  }
-})();
-
-// ========== Helper ==========
+// ========== sbReady must be first ==========
 function sbReady() {
   if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
   return true;
 }
 
-// ========== Business Logic ==========
-async function init() {
-  if (!sb) return;
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      onLogin();
-    }
-  } catch (e) {
-    console.error('会话恢复失败:', e);
-  }
+// ========== UI Functions ==========
+function showLoginModal() {
+  document.getElementById('loginModal').classList.add('active');
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
 }
+function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
 
-async function login() {
+function showRegisterModal() {
+  document.getElementById('registerModal').classList.add('active');
+  document.getElementById('regEmail').value = '';
+  document.getElementById('regPassword').value = '';
+  document.getElementById('regConfirmPassword').value = '';
+  document.getElementById('securityQuestion').value = '你的出生城市是？';
+  document.getElementById('securityAnswer').value = '';
+}
+function closeRegisterModal() { document.getElementById('registerModal').classList.remove('active'); }
+
+function showPayModal() { document.getElementById('payModal').classList.add('active'); }
+function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
+
+// ========== Business Logic ==========
+async function doLogin() {
   if (!sbReady()) return;
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  const securityQuestion = document.getElementById('securityQuestion').value;
-  const securityAnswer = document.getElementById('securityAnswer').value.trim();
   if (!email || !password) return alert('请填写邮箱和密码');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
   if (password.length < 6) return alert('密码至少6位');
 
   try {
-    let { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error && error.message.includes('Invalid login')) {
-      // 注册流程：必须有密保
-      if (!securityQuestion || !securityAnswer) return alert('注册时请选择密保问题并填写答案');
-      const { data: signUpData, error: signUpError } = await sb.auth.signUp({ email, password });
-      if (signUpError) return alert('注册失败: ' + signUpError.message);
-      // 同步注册暗流 dash.hfd.fund 账户
-      const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
-      if (signUpData.session) {
-        currentUser = signUpData.user;
-        fetch('/api/register-darkflow', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(darkflowBody)
-        }).catch(() => {});
-        onLogin();
-        return;
-      }
-      if (signUpData.user) {
-        fetch('/api/register-darkflow', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(darkflowBody)
-        }).catch(() => {});
-      }
-      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');
-      closeLoginModal();
-      return;
-    }
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) return alert('登录失败: ' + error.message);
     currentUser = data.user;
     onLogin();
   } catch (e) {
     console.error('登录异常:', e);
+    alert('操作失败，请重试');
+  }
+}
+
+async function doRegister() {
+  if (!sbReady()) return;
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
+  const securityQuestion = document.getElementById('securityQuestion').value;
+  const securityAnswer = document.getElementById('securityAnswer').value.trim();
+
+  if (!email || !password || !confirmPassword) return alert('请填写所有必填项');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
+  if (password.length < 6) return alert('密码至少6位');
+  if (password !== confirmPassword) return alert('两次输入的密码不一致');
+  if (!securityQuestion || !securityAnswer) return alert('请选择密保问题并填写答案');
+
+  try {
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) return alert('注册失败: ' + error.message);
+
+    // 同步注册暗流 dash.hfd.fund 账户
+    const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
+    fetch('/api/register-darkflow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(darkflowBody)
+    }).catch(() => {});
+
+    alert('注册成功，请登录');
+    closeRegisterModal();
+    showLoginModal();
+  } catch (e) {
+    console.error('注册异常:', e);
     alert('操作失败，请重试');
   }
 }
@@ -200,6 +206,7 @@ async function onLogin() {
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('banner').style.display = 'block';
   closeLoginModal();
+  closeRegisterModal();
 
   try {
     const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
@@ -271,11 +278,41 @@ function startPolling(orderNo) {
       document.getElementById('planBadge').style.display = 'inline';
       document.getElementById('btnUpgrade').style.display = 'none';
       document.getElementById('banner').style.display = 'none';
-      // 支付成功后跳转到暗流专业版指标页面
       window.location.href = 'https://dash.hfd.fund/pro/?tf=1h&indicator=smart_money_cost&coin=BTC';
     }
   }, 3000);
   setTimeout(() => clearInterval(interval), 300000);
+}
+
+// ========== Supabase Initialization ==========
+(function() {
+  try {
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      init();
+    } else {
+      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
+      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+      document.getElementById('btnLogin').disabled = true;
+    }
+  } catch (e) {
+    console.error('Supabase 初始化失败:', e);
+    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+    document.getElementById('btnLogin').disabled = true;
+  }
+})();
+
+async function init() {
+  if (!sb) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      onLogin();
+    }
+  } catch (e) {
+    console.error('会话恢复失败:', e);
+  }
 }
 </script>
 </body>
