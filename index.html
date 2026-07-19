@@ -32,6 +32,11 @@
   .banner { background: linear-gradient(135deg, #1f6feb, #238636); padding: 12px 20px; text-align: center; font-size: 14px; color: #fff; }
   .banner a { color: #ffd666; text-decoration: underline; cursor: pointer; }
   .expire-warn { color: #f85149; font-size: 12px; margin-left: 8px; }
+  .tab-nav { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 16px; }
+  .tab-btn { flex: 1; padding: 8px 16px; border: none; background: transparent; color: #8b949e; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
   .modal .tip a { color: #58a6ff; cursor: pointer; text-decoration: none; }
   .modal .tip a:hover { text-decoration: underline; }
 </style>
@@ -62,35 +67,34 @@
   </div>
 </div>
 
-<!-- 弹窗1：登录 -->
 <div class="modal-overlay" id="loginModal">
   <div class="modal">
-    <h2>登录</h2>
-    <input type="email" id="loginEmail" placeholder="请输入邮箱" autocomplete="email">
-    <input type="password" id="loginPassword" placeholder="请输入密码">
-    <button class="btn btn-primary" onclick="doLogin()">登录</button>
-    <button class="btn" onclick="closeLoginModal()">取消</button>
-    <div class="tip">没有账号？<a onclick="closeLoginModal();showRegisterModal();">去注册</a></div>
-  </div>
-</div>
-
-<!-- 弹窗2：注册 -->
-<div class="modal-overlay" id="registerModal">
-  <div class="modal">
-    <h2>注册</h2>
-    <input type="email" id="regEmail" placeholder="请输入邮箱" autocomplete="email">
-    <input type="password" id="regPassword" placeholder="请输入密码">
-    <input type="password" id="regConfirmPassword" placeholder="请再次输入密码">
-    <select id="securityQuestion">
-      <option value="你的出生城市是？">你的出生城市是？</option>
-      <option value="你的小学名称是？">你的小学名称是？</option>
-      <option value="你的宠物名字是？">你的宠物名字是？</option>
-      <option value="你最喜欢的电影是？">你最喜欢的电影是？</option>
-    </select>
-    <input type="text" id="securityAnswer" placeholder="请输入密保答案">
-    <button class="btn btn-primary" onclick="doRegister()">注册</button>
-    <button class="btn" onclick="closeRegisterModal()">取消</button>
-    <div class="tip">已有账号？<a onclick="closeRegisterModal();showLoginModal();">去登录</a></div>
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">登录</button>
+      <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">注册</button>
+    </div>
+    <div class="tab-panel active" id="loginPanel">
+      <input type="email" id="loginEmail" placeholder="请输入邮箱" autocomplete="email">
+      <input type="password" id="loginPassword" placeholder="输入密码（6位以上）">
+      <button class="btn btn-primary" onclick="doLogin()">登录</button>
+      <div class="tip">没有账号？<a onclick="switchTab('register')">去注册</a></div>
+    </div>
+    <div class="tab-panel" id="registerPanel">
+      <input type="email" id="regEmail" placeholder="请输入邮箱" autocomplete="email">
+      <input type="password" id="regPassword" placeholder="输入密码（6位以上）">
+      <input type="password" id="regConfirmPassword" placeholder="确认密码">
+      <select id="securityQuestion">
+        <option value="">选择密保问题（注册时必填）</option>
+        <option value="你的出生城市是？">你的出生城市是？</option>
+        <option value="你的小学名称是？">你的小学名称是？</option>
+        <option value="你的宠物名字是？">你的宠物名字是？</option>
+        <option value="你最喜欢的电影是？">你最喜欢的电影是？</option>
+      </select>
+      <input type="text" id="securityAnswer" placeholder="密保答案">
+      <button class="btn btn-primary" onclick="doRegister()">注册</button>
+      <div class="tip">已有账号？<a onclick="switchTab('login')">去登录</a></div>
+    </div>
+    <button class="btn" onclick="closeLoginModal()" style="margin-top:8px;">取消</button>
   </div>
 </div>
 
@@ -114,34 +118,72 @@ const PROXY_BASE = '/api/proxy';
 let sb = null;
 let currentUser = null;
 
-// ========== sbReady must be first ==========
+// ========== UI Functions (always available, defined before any init) ==========
+function showLoginModal() {
+  document.getElementById('loginModal').classList.add('active');
+  switchTab('login');
+}
+function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+function showPayModal() { document.getElementById('payModal').classList.add('active'); }
+function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
+
+// ========== Supabase Initialization (safe, won't block script) ==========
+(function() {
+  try {
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      init();
+    } else {
+      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
+      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+      document.getElementById('btnLogin').disabled = true;
+    }
+  } catch (e) {
+    console.error('Supabase 初始化失败:', e);
+    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+    document.getElementById('btnLogin').disabled = true;
+  }
+})();
+
+// ========== Helper ==========
 function sbReady() {
   if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
   return true;
 }
 
-// ========== UI Functions ==========
-function showLoginModal() {
-  document.getElementById('loginModal').classList.add('active');
+// ========== Business Logic ==========
+async function init() {
+  if (!sb) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      onLogin();
+    }
+  } catch (e) {
+    console.error('会话恢复失败:', e);
+  }
+}
+
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+  document.getElementById('loginPanel').classList.toggle('active', isLogin);
+  document.getElementById('registerPanel').classList.toggle('active', !isLogin);
+  clearLoginForms();
+}
+
+function clearLoginForms() {
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
-}
-function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
-
-function showRegisterModal() {
-  document.getElementById('registerModal').classList.add('active');
   document.getElementById('regEmail').value = '';
   document.getElementById('regPassword').value = '';
   document.getElementById('regConfirmPassword').value = '';
-  document.getElementById('securityQuestion').value = '你的出生城市是？';
+  document.getElementById('securityQuestion').value = '';
   document.getElementById('securityAnswer').value = '';
 }
-function closeRegisterModal() { document.getElementById('registerModal').classList.remove('active'); }
 
-function showPayModal() { document.getElementById('payModal').classList.add('active'); }
-function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
-
-// ========== Business Logic ==========
 async function doLogin() {
   if (!sbReady()) return;
   const email = document.getElementById('loginEmail').value.trim();
@@ -181,24 +223,24 @@ async function doRegister() {
 
     // 同步注册暗流 dash.hfd.fund 账户
     const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
-    let darkflowWarning = '';
-    try {
-      const dfResp = await fetch('/api/register-darkflow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(darkflowBody)
-      });
-      const dfData = await dfResp.json();
-      if (!dfData.darkflow || !dfData.darkflow.success) {
-        darkflowWarning = '\n\n提示：暗流同步失败，但不影响本站使用';
-      }
-    } catch {
-      darkflowWarning = '\n\n提示：暗流同步失败，但不影响本站使用';
-    }
+    fetch('/api/register-darkflow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(darkflowBody)
+    }).catch(() => {});
 
-    alert('注册成功，请登录' + darkflowWarning);
-    closeRegisterModal();
-    showLoginModal();
+    if (data.session) {
+      currentUser = data.user;
+      onLogin();
+      return;
+    }
+    if (data.user) {
+      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');
+      closeLoginModal();
+      return;
+    }
+    alert('注册请求已提交，请查看邮箱确认');
+    closeLoginModal();
   } catch (e) {
     console.error('注册异常:', e);
     alert('操作失败，请重试');
@@ -215,7 +257,6 @@ async function onLogin() {
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('banner').style.display = 'block';
   closeLoginModal();
-  closeRegisterModal();
 
   try {
     const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
@@ -287,41 +328,11 @@ function startPolling(orderNo) {
       document.getElementById('planBadge').style.display = 'inline';
       document.getElementById('btnUpgrade').style.display = 'none';
       document.getElementById('banner').style.display = 'none';
+      // 支付成功后跳转到暗流专业版指标页面
       window.location.href = 'https://dash.hfd.fund/pro/?tf=1h&indicator=smart_money_cost&coin=BTC';
     }
   }, 3000);
   setTimeout(() => clearInterval(interval), 300000);
-}
-
-// ========== Supabase Initialization ==========
-(function() {
-  try {
-    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      init();
-    } else {
-      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
-      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
-      document.getElementById('btnLogin').disabled = true;
-    }
-  } catch (e) {
-    console.error('Supabase 初始化失败:', e);
-    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
-    document.getElementById('btnLogin').disabled = true;
-  }
-})();
-
-async function init() {
-  if (!sb) return;
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      onLogin();
-    }
-  } catch (e) {
-    console.error('会话恢复失败:', e);
-  }
 }
 </script>
 </body>
