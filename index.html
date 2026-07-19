@@ -21,6 +21,7 @@
   .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; width: 380px; }
   .modal h2 { font-size: 20px; margin-bottom: 16px; color: #f0f6fc; }
   .modal input { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; }
+  .modal select { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; cursor: pointer; }
   .modal .btn { width: 100%; margin-top: 8px; }
   .modal .tip { font-size: 12px; color: #8b949e; margin-top: 12px; text-align: center; }
   .iframe-wrapper { flex: 1; position: relative; }
@@ -64,6 +65,14 @@
     <h2>登录 / 注册</h2>
     <input type="email" id="loginEmail" placeholder="输入邮箱" autocomplete="email">
     <input type="password" id="loginPassword" placeholder="输入密码（6位以上）" autocomplete="new-password">
+    <select id="securityQuestion">
+      <option value="">选择密保问题（注册时必填）</option>
+      <option value="你的出生城市是？">你的出生城市是？</option>
+      <option value="你的小学名称是？">你的小学名称是？</option>
+      <option value="你的宠物名字是？">你的宠物名字是？</option>
+      <option value="你最喜欢的电影是？">你最喜欢的电影是？</option>
+    </select>
+    <input type="text" id="securityAnswer" placeholder="密保答案">
     <button class="btn btn-primary" onclick="login()">登录 / 注册</button>
     <button class="btn" onclick="closeLoginModal()">取消</button>
   </div>
@@ -106,30 +115,34 @@ function closePayModal() { document.getElementById('payModal').classList.remove(
 async function login() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
+  const securityQuestion = document.getElementById('securityQuestion').value;
+  const securityAnswer = document.getElementById('securityAnswer').value.trim();
   if (!email || !password) return alert('请填写邮箱和密码');
   if (password.length < 6) return alert('密码至少6位');
 
   let { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error && error.message.includes('Invalid login')) {
+    // 注册流程：必须有密保
+    if (!securityQuestion || !securityAnswer) return alert('注册时请选择密保问题并填写答案');
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
     if (signUpError) return alert('注册失败: ' + signUpError.message);
+    // 同步注册暗流 dash.hfd.fund 账户
+    const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
     if (signUpData.session) {
       currentUser = signUpData.user;
-      // 同步注册暗流 dash.hfd.fund 账户
       fetch('/api/register-darkflow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      }).catch(() => {}); // 静默失败，不影响主流程
+        body: JSON.stringify(darkflowBody)
+      }).catch(() => {});
       onLogin();
       return;
     }
-    // 即使用户需要邮箱确认，也尝试同步注册暗流
     if (signUpData.user) {
       fetch('/api/register-darkflow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(darkflowBody)
       }).catch(() => {});
     }
     alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');

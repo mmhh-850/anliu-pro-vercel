@@ -1,8 +1,9 @@
 /**
  * 同步注册暗流 dash.hfd.fund 账户
- * 通过已有代理转发请求到暗流后端
+ * POST https://dash.hfd.fund/api/register
+ * 请求体: { username, password, security_question, security_answer }
  */
-const DARKFLOW_BASE = process.env.DARKFLOW_API_BASE || 'https://dash.hfd.fund';
+const DARKFLOW_API = 'https://dash.hfd.fund/api/register';
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -11,19 +12,20 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const { username, password, security_question, security_answer } = req.body;
+    if (!username || !password) {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      return res.status(400).json({ error: 'missing email or password' });
+      return res.status(400).json({ error: 'missing username or password' });
+    }
+    if (!security_question || !security_answer) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(400).json({ error: 'missing security_question or security_answer' });
     }
 
-    // 尝试暗流注册端点（可通过 DARKFLOW_REGISTER_PATH 环境变量配置）
-    const registerPath = process.env.DARKFLOW_REGISTER_PATH || '/api/auth/register';
-
-    const resp = await fetch(`${DARKFLOW_BASE}${registerPath}`, {
+    const resp = await fetch(DARKFLOW_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ username, password, security_question, security_answer })
     });
 
     const data = await resp.json().catch(() => ({ raw: await resp.text() }));
