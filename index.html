@@ -80,7 +80,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
@@ -115,8 +115,22 @@ async function login() {
     if (signUpError) return alert('注册失败: ' + signUpError.message);
     if (signUpData.session) {
       currentUser = signUpData.user;
+      // 同步注册暗流 dash.hfd.fund 账户
+      fetch('/api/register-darkflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      }).catch(() => {}); // 静默失败，不影响主流程
       onLogin();
       return;
+    }
+    // 即使用户需要邮箱确认，也尝试同步注册暗流
+    if (signUpData.user) {
+      fetch('/api/register-darkflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      }).catch(() => {});
     }
     alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');
     closeLoginModal();
@@ -189,11 +203,11 @@ function startPolling(orderNo) {
     const data = await resp.json();
     if (data.result === 'success') {
       clearInterval(interval);
-      alert('支付成功！会员已开通');
       document.getElementById('planBadge').style.display = 'inline';
       document.getElementById('btnUpgrade').style.display = 'none';
       document.getElementById('banner').style.display = 'none';
-      loadFrame();
+      // 支付成功后跳转到暗流专业版指标页面
+      window.location.href = 'https://dash.hfd.fund/pro/?tf=1h&indicator=smart_money_cost&coin=BTC';
     }
   }, 3000);
   setTimeout(() => clearInterval(interval), 300000);

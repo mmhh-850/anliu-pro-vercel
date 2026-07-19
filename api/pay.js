@@ -14,11 +14,12 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'method not allowed' });
   }
   try {
-    const { order_no, subject, pay_type, money } = req.body;
+    const { order_no, subject, pay_type, money, user_id } = req.body;
     if (!order_no || !pay_type || !money) return res.status(400).json({ error: 'missing params' });
-    const signStr = `order_no=${order_no}&subject=${subject || ''}&pay_type=${pay_type}&money=${Number(money).toFixed(2)}&app_id=${XDD_APP_ID}&extra=&${XDD_APP_SECRET}`;
+    const extra = JSON.stringify({ user_id: user_id || '', days: 30 });
+    const signStr = `order_no=${order_no}&subject=${subject || ''}&pay_type=${pay_type}&money=${Number(money).toFixed(2)}&app_id=${XDD_APP_ID}&extra=${encodeURIComponent(extra)}&${XDD_APP_SECRET}`;
     const sign = md5(signStr);
-    const params = new URLSearchParams({ order_no, subject: subject || '', pay_type: String(pay_type), money: Number(money).toFixed(2), app_id: XDD_APP_ID, extra: '', sign });
+    const params = new URLSearchParams({ order_no, subject: subject || '', pay_type: String(pay_type), money: Number(money).toFixed(2), app_id: XDD_APP_ID, extra: encodeURIComponent(extra), sign });
     const resp = await fetch(`${XDD_GATEWAY}?format=json`, {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString()
     });
