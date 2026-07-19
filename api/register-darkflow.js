@@ -5,6 +5,18 @@
  */
 const DARKFLOW_API = 'https://dash.hfd.fund/api/register';
 
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk.toString());
+    req.on('end', () => {
+      try { resolve(JSON.parse(body || '{}')); }
+      catch (e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,7 +24,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { username, password, security_question, security_answer } = req.body;
+    const body = await parseJsonBody(req);
+    const { username, password, security_question, security_answer } = body;
     if (!username || !password) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       return res.status(400).json({ error: 'missing username or password' });

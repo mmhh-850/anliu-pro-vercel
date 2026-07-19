@@ -8,13 +8,26 @@ function md5(text) {
   return crypto.createHash('md5').update(text).digest('hex').toUpperCase();
 }
 
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk.toString());
+    req.on('end', () => {
+      try { resolve(JSON.parse(body || '{}')); }
+      catch (e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(405).json({ error: 'method not allowed' });
   }
   try {
-    const { order_no, subject, pay_type, money, user_id } = req.body;
+    const body = await parseJsonBody(req);
+    const { order_no, subject, pay_type, money, user_id } = body;
     if (!order_no || !pay_type || !money) return res.status(400).json({ error: 'missing params' });
     const extra = JSON.stringify({ user_id: user_id || '', days: 30 });
     const signStr = `order_no=${order_no}&subject=${subject || ''}&pay_type=${pay_type}&money=${Number(money).toFixed(2)}&app_id=${XDD_APP_ID}&extra=${encodeURIComponent(extra)}&${XDD_APP_SECRET}`;

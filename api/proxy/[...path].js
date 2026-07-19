@@ -1,5 +1,14 @@
 const TARGET_URL = 'https://dash.hfd.fund';
 
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
 module.exports = async function handler(req, res) {
   const pathParts = req.query.path || [];
   const path = pathParts.join('/');
@@ -7,6 +16,8 @@ module.exports = async function handler(req, res) {
   const targetUrl = TARGET_URL + '/' + path + query;
 
   try {
+    const rawBody = await readBody(req);
+
     const fetchHeaders = {};
     for (const [k, v] of Object.entries(req.headers)) {
       if (k === 'host') fetchHeaders[k] = new URL(TARGET_URL).host;
@@ -14,8 +25,8 @@ module.exports = async function handler(req, res) {
     }
 
     const fetchOptions = { method: req.method, headers: fetchHeaders, redirect: 'follow' };
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-      fetchOptions.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    if (req.method !== 'GET' && req.method !== 'HEAD' && rawBody.length > 0) {
+      fetchOptions.body = rawBody;
     }
 
     const response = await fetch(targetUrl, fetchOptions);
