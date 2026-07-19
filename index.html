@@ -94,25 +94,56 @@
 const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
 const PROXY_BASE = '/api/proxy';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let supabase = null;
 let currentUser = null;
 
-async function init() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    onLogin();
-  }
-}
-init();
-
+// ========== UI Functions (always available, defined before any init) ==========
 function showLoginModal() { document.getElementById('loginModal').classList.add('active'); }
 function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
 function showPayModal() { document.getElementById('payModal').classList.add('active'); }
 function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
 
+// ========== Supabase Initialization (safe, won't block script) ==========
+(function() {
+  try {
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      init();
+    } else {
+      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
+      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+      document.getElementById('btnLogin').disabled = true;
+    }
+  } catch (e) {
+    console.error('Supabase 初始化失败:', e);
+    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+    document.getElementById('btnLogin').disabled = true;
+  }
+})();
+
+// ========== Helper ==========
+function supabaseReady() {
+  if (!supabase) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
+  return true;
+}
+
+// ========== Business Logic ==========
+async function init() {
+  if (!supabase) return;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      onLogin();
+    }
+  } catch (e) {
+    console.error('会话恢复失败:', e);
+  }
+}
+
 async function login() {
+  if (!supabaseReady()) return;
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   const securityQuestion = document.getElementById('securityQuestion').value;
@@ -120,41 +151,47 @@ async function login() {
   if (!email || !password) return alert('请填写邮箱和密码');
   if (password.length < 6) return alert('密码至少6位');
 
-  let { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error && error.message.includes('Invalid login')) {
-    // 注册流程：必须有密保
-    if (!securityQuestion || !securityAnswer) return alert('注册时请选择密保问题并填写答案');
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
-    if (signUpError) return alert('注册失败: ' + signUpError.message);
-    // 同步注册暗流 dash.hfd.fund 账户
-    const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
-    if (signUpData.session) {
-      currentUser = signUpData.user;
-      fetch('/api/register-darkflow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(darkflowBody)
-      }).catch(() => {});
-      onLogin();
+  try {
+    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error && error.message.includes('Invalid login')) {
+      // 注册流程：必须有密保
+      if (!securityQuestion || !securityAnswer) return alert('注册时请选择密保问题并填写答案');
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) return alert('注册失败: ' + signUpError.message);
+      // 同步注册暗流 dash.hfd.fund 账户
+      const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
+      if (signUpData.session) {
+        currentUser = signUpData.user;
+        fetch('/api/register-darkflow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(darkflowBody)
+        }).catch(() => {});
+        onLogin();
+        return;
+      }
+      if (signUpData.user) {
+        fetch('/api/register-darkflow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(darkflowBody)
+        }).catch(() => {});
+      }
+      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');
+      closeLoginModal();
       return;
     }
-    if (signUpData.user) {
-      fetch('/api/register-darkflow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(darkflowBody)
-      }).catch(() => {});
-    }
-    alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');
-    closeLoginModal();
-    return;
+    if (error) return alert('登录失败: ' + error.message);
+    currentUser = data.user;
+    onLogin();
+  } catch (e) {
+    console.error('登录异常:', e);
+    alert('操作失败，请重试');
   }
-  if (error) return alert('登录失败: ' + error.message);
-  currentUser = data.user;
-  onLogin();
 }
 
 async function onLogin() {
+  if (!supabase) return;
   document.getElementById('loginPrompt').style.display = 'none';
   document.getElementById('mainFrame').style.display = 'block';
   document.getElementById('btnLogin').style.display = 'none';
@@ -164,12 +201,16 @@ async function onLogin() {
   document.getElementById('banner').style.display = 'block';
   closeLoginModal();
 
-  const { data } = await supabase.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
-  if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
-    document.getElementById('planBadge').style.display = 'inline';
-    document.getElementById('btnUpgrade').style.display = 'none';
-    document.getElementById('banner').style.display = 'none';
-    loadFrame();
+  try {
+    const { data } = await supabase.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
+      document.getElementById('planBadge').style.display = 'inline';
+      document.getElementById('btnUpgrade').style.display = 'none';
+      document.getElementById('banner').style.display = 'none';
+      loadFrame();
+    }
+  } catch (e) {
+    console.error('订阅查询失败:', e);
   }
 }
 
@@ -179,7 +220,12 @@ function loadFrame() {
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  if (!supabaseReady()) return;
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    console.error('登出失败:', e);
+  }
   currentUser = null;
   document.getElementById('loginPrompt').style.display = 'block';
   document.getElementById('mainFrame').style.display = 'none';
@@ -194,19 +240,25 @@ async function logout() {
 
 async function pay(payType) {
   if (!currentUser) return alert('请先登录');
+  if (!supabaseReady()) return;
   const orderNo = 'ANLIU' + Date.now();
-  const resp = await fetch('/api/pay', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ order_no: orderNo, subject: '暗流Pro月费会员', pay_type: payType, money: 9.9, user_id: currentUser.id })
-  });
-  const result = await resp.json();
-  if (result.url) {
-    window.open(result.url, '_blank');
-    closePayModal();
-    startPolling(orderNo);
-  } else {
-    alert('创建订单失败: ' + (result.error || '未知错误'));
+  try {
+    const resp = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_no: orderNo, subject: '暗流Pro月费会员', pay_type: payType, money: 9.9, user_id: currentUser.id })
+    });
+    const result = await resp.json();
+    if (result.url) {
+      window.open(result.url, '_blank');
+      closePayModal();
+      startPolling(orderNo);
+    } else {
+      alert('创建订单失败: ' + (result.error || '未知错误'));
+    }
+  } catch (e) {
+    console.error('支付异常:', e);
+    alert('支付服务暂不可用，请重试');
   }
 }
 
