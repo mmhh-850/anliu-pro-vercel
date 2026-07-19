@@ -181,13 +181,22 @@ async function doRegister() {
 
     // 同步注册暗流 dash.hfd.fund 账户
     const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
-    fetch('/api/register-darkflow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(darkflowBody)
-    }).catch(() => {});
+    let darkflowWarning = '';
+    try {
+      const dfResp = await fetch('/api/register-darkflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(darkflowBody)
+      });
+      const dfData = await dfResp.json();
+      if (!dfData.darkflow || !dfData.darkflow.success) {
+        darkflowWarning = '\n\n提示：暗流同步失败，但不影响本站使用';
+      }
+    } catch {
+      darkflowWarning = '\n\n提示：暗流同步失败，但不影响本站使用';
+    }
 
-    alert('注册成功，请登录');
+    alert('注册成功，请登录' + darkflowWarning);
     closeRegisterModal();
     showLoginModal();
   } catch (e) {
