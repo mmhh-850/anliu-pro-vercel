@@ -95,7 +95,7 @@ const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
 const PROXY_BASE = '/api/proxy';
 
-let supabase = null;
+let sb = null;
 let currentUser = null;
 
 // ========== UI Functions (always available, defined before any init) ==========
@@ -108,7 +108,7 @@ function closePayModal() { document.getElementById('payModal').classList.remove(
 (function() {
   try {
     if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       init();
     } else {
       console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
@@ -123,16 +123,16 @@ function closePayModal() { document.getElementById('payModal').classList.remove(
 })();
 
 // ========== Helper ==========
-function supabaseReady() {
-  if (!supabase) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
+function sbReady() {
+  if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
   return true;
 }
 
 // ========== Business Logic ==========
 async function init() {
-  if (!supabase) return;
+  if (!sb) return;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sb.auth.getSession();
     if (session) {
       currentUser = session.user;
       onLogin();
@@ -143,7 +143,7 @@ async function init() {
 }
 
 async function login() {
-  if (!supabaseReady()) return;
+  if (!sbReady()) return;
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   const securityQuestion = document.getElementById('securityQuestion').value;
@@ -152,11 +152,11 @@ async function login() {
   if (password.length < 6) return alert('密码至少6位');
 
   try {
-    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    let { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error && error.message.includes('Invalid login')) {
       // 注册流程：必须有密保
       if (!securityQuestion || !securityAnswer) return alert('注册时请选择密保问题并填写答案');
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error: signUpError } = await sb.auth.signUp({ email, password });
       if (signUpError) return alert('注册失败: ' + signUpError.message);
       // 同步注册暗流 dash.hfd.fund 账户
       const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
@@ -191,7 +191,7 @@ async function login() {
 }
 
 async function onLogin() {
-  if (!supabase) return;
+  if (!sb) return;
   document.getElementById('loginPrompt').style.display = 'none';
   document.getElementById('mainFrame').style.display = 'block';
   document.getElementById('btnLogin').style.display = 'none';
@@ -202,7 +202,7 @@ async function onLogin() {
   closeLoginModal();
 
   try {
-    const { data } = await supabase.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+    const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
     if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
       document.getElementById('planBadge').style.display = 'inline';
       document.getElementById('btnUpgrade').style.display = 'none';
@@ -220,9 +220,9 @@ function loadFrame() {
 }
 
 async function logout() {
-  if (!supabaseReady()) return;
+  if (!sbReady()) return;
   try {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
   } catch (e) {
     console.error('登出失败:', e);
   }
@@ -240,7 +240,7 @@ async function logout() {
 
 async function pay(payType) {
   if (!currentUser) return alert('请先登录');
-  if (!supabaseReady()) return;
+  if (!sbReady()) return;
   const orderNo = 'ANLIU' + Date.now();
   try {
     const resp = await fetch('/api/pay', {
