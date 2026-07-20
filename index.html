@@ -21,6 +21,7 @@
   .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; width: 380px; }
   .modal h2 { font-size: 20px; margin-bottom: 16px; color: #f0f6fc; }
   .modal input { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; }
+  .modal select { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; cursor: pointer; }
   .modal .btn { width: 100%; margin-top: 8px; }
   .modal .tip { font-size: 12px; color: #8b949e; margin-top: 12px; text-align: center; }
   .iframe-wrapper { flex: 1; position: relative; }
@@ -31,6 +32,13 @@
   .banner { background: linear-gradient(135deg, #1f6feb, #238636); padding: 12px 20px; text-align: center; font-size: 14px; color: #fff; }
   .banner a { color: #ffd666; text-decoration: underline; cursor: pointer; }
   .expire-warn { color: #f85149; font-size: 12px; margin-left: 8px; }
+  .tab-nav { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 16px; }
+  .tab-btn { flex: 1; padding: 8px 16px; border: none; background: transparent; color: #8b949e; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .modal .tip a { color: #58a6ff; cursor: pointer; text-decoration: none; }
+  .modal .tip a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -61,11 +69,32 @@
 
 <div class="modal-overlay" id="loginModal">
   <div class="modal">
-    <h2>登录 / 注册</h2>
-    <input type="email" id="loginEmail" placeholder="输入邮箱" autocomplete="email">
-    <input type="password" id="loginPassword" placeholder="输入密码（6位以上）" autocomplete="new-password">
-    <button class="btn btn-primary" onclick="login()">登录 / 注册</button>
-    <button class="btn" onclick="closeLoginModal()">取消</button>
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">登录</button>
+      <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">注册</button>
+    </div>
+    <div class="tab-panel active" id="loginPanel">
+      <input type="email" id="loginEmail" placeholder="请输入邮箱" autocomplete="email">
+      <input type="password" id="loginPassword" placeholder="输入密码（6位以上）">
+      <button class="btn btn-primary" onclick="doLogin()">登录</button>
+      <div class="tip">没有账号？<a onclick="switchTab('register')">去注册</a></div>
+    </div>
+    <div class="tab-panel" id="registerPanel">
+      <input type="email" id="regEmail" placeholder="请输入邮箱" autocomplete="email">
+      <input type="password" id="regPassword" placeholder="输入密码（6位以上）">
+      <input type="password" id="regConfirmPassword" placeholder="确认密码">
+      <select id="securityQuestion">
+        <option value="">选择密保问题（注册时必填）</option>
+        <option value="你的出生城市是？">你的出生城市是？</option>
+        <option value="你的小学名称是？">你的小学名称是？</option>
+        <option value="你的宠物名字是？">你的宠物名字是？</option>
+        <option value="你最喜欢的电影是？">你最喜欢的电影是？</option>
+      </select>
+      <input type="text" id="securityAnswer" placeholder="密保答案">
+      <button class="btn btn-primary" onclick="doRegister()">注册</button>
+      <div class="tip">已有账号？<a onclick="switchTab('login')">去登录</a></div>
+    </div>
+    <button class="btn" onclick="closeLoginModal()" style="margin-top:8px;">取消</button>
   </div>
 </div>
 
@@ -73,82 +102,195 @@
   <div class="modal">
     <h2>升级暗流Pro会员</h2>
     <p style="color:#8b949e;margin-bottom:12px;">￥9.9 / 月 · 解锁全部专业指标</p>
+    <input type="password" id="payPassword" placeholder="输入暗流账户密码" autocomplete="off">
     <button class="btn btn-primary" id="btnWechatPay" onclick="pay(1)">微信支付 ￥9.9</button>
     <button class="btn" id="btnAlipay" onclick="pay(2)" style="margin-top:8px;">支付宝 ￥9.9</button>
+    <div id="qrArea" style="display:none;text-align:center;margin-top:12px;">
+      <img id="qrImage" style="max-width:200px;border-radius:8px;" />
+      <p id="qrStatus" style="color:#ffd666;font-size:13px;margin-top:8px;">等待扫码支付...</p>
+      <p id="qrExpire" style="color:#8b949e;font-size:11px;"></p>
+    </div>
     <button class="btn" onclick="closePayModal()" style="margin-top:8px;">取消</button>
     <div class="tip">支付成功后自动开通，有效期30天</div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase.min.js"></script>
+<!--
+Supabase subscriptions 表需新增字段:
+  darkflow_token TEXT  (可为 NULL)
+在 Supabase Dashboard → Table Editor → subscriptions → Add Column 中添加
+-->
 <script>
 const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
 const PROXY_BASE = '/api/proxy';
 
-let supabase = null;
+let sb = null;
 let currentUser = null;
 
-// ===== UI 交互函数（优先定义，不依赖 Supabase）=====
-function showLoginModal() { document.getElementById('loginModal').classList.add('active'); }
+// ========== UI Functions (always available, defined before any init) ==========
+function showLoginModal() {
+  document.getElementById('loginModal').classList.add('active');
+  switchTab('login');
+}
 function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
-function showPayModal() { document.getElementById('payModal').classList.add('active'); }
-function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
+function showPayModal() {
+  document.getElementById('payModal').classList.add('active');
+  // 重置支付弹窗状态
+  document.getElementById('payPassword').value = '';
+  document.getElementById('qrArea').style.display = 'none';
+  document.getElementById('qrImage').src = '';
+  document.getElementById('qrStatus').textContent = '等待扫码支付...';
+  document.getElementById('qrStatus').style.color = '#ffd666';
+  document.getElementById('qrExpire').textContent = '';
+  document.getElementById('btnWechatPay').style.display = 'block';
+  document.getElementById('btnAlipay').style.display = 'block';
+}
+function closePayModal() {
+  document.getElementById('payModal').classList.remove('active');
+  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+  // 恢复按钮显示
+  document.getElementById('btnWechatPay').style.display = 'block';
+  document.getElementById('btnAlipay').style.display = 'block';
+}
 
-// ===== 尝试初始化 Supabase（失败不阻断 UI）=====
-(function initSupabase() {
+// ========== Supabase Initialization (safe, won't block script) ==========
+(function() {
   try {
-    if (!window.supabase) throw new Error('Supabase SDK 未加载，请检查网络连接或刷新重试');
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    init();
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      init();
+    } else {
+      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
+      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+      document.getElementById('btnLogin').disabled = true;
+    }
   } catch (e) {
-    console.warn('Supabase 初始化失败:', e.message);
+    console.error('Supabase 初始化失败:', e);
     document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+    document.getElementById('btnLogin').disabled = true;
   }
 })();
 
+// ========== Helper ==========
+function sbReady() {
+  if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
+  return true;
+}
+
+// ========== Business Logic ==========
 async function init() {
+  if (!sb) return;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sb.auth.getSession();
     if (session) {
       currentUser = session.user;
       onLogin();
     }
   } catch (e) {
-    console.warn('获取会话失败:', e.message);
+    console.error('会话恢复失败:', e);
   }
 }
 
-async function login() {
-  if (!supabase) return alert('登录服务暂不可用，请刷新页面重试');
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+  document.getElementById('loginPanel').classList.toggle('active', isLogin);
+  document.getElementById('registerPanel').classList.toggle('active', !isLogin);
+  clearLoginForms();
+}
+
+function clearLoginForms() {
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('regEmail').value = '';
+  document.getElementById('regPassword').value = '';
+  document.getElementById('regConfirmPassword').value = '';
+  document.getElementById('securityQuestion').value = '';
+  document.getElementById('securityAnswer').value = '';
+}
+
+async function doLogin() {
+  if (!sbReady()) return;
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   if (!email || !password) return alert('请填写邮箱和密码');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
   if (password.length < 6) return alert('密码至少6位');
 
   try {
-    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error && error.message.includes('Invalid login')) {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) return alert('注册失败: ' + signUpError.message);
-      if (signUpData.session) {
-        currentUser = signUpData.user;
-        onLogin();
-        return;
-      }
-      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）');
-      closeLoginModal();
-      return;
-    }
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) return alert('登录失败: ' + error.message);
     currentUser = data.user;
     onLogin();
   } catch (e) {
-    alert('登录请求失败，请检查网络后重试');
+    console.error('登录异常:', e);
+    alert('操作失败，请重试');
+  }
+}
+
+async function doRegister() {
+  if (!sbReady()) return;
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
+  const securityQuestion = document.getElementById('securityQuestion').value;
+  const securityAnswer = document.getElementById('securityAnswer').value.trim();
+
+  if (!email || !password || !confirmPassword) return alert('请填写所有必填项');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
+  if (password.length < 6) return alert('密码至少6位');
+  if (password !== confirmPassword) return alert('两次输入的密码不一致');
+  if (!securityQuestion || !securityAnswer) return alert('请选择密保问题并填写答案');
+
+  try {
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) return alert('注册失败: ' + error.message);
+
+    // 同步注册暗流 dash.hfd.fund 账户
+    const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
+    let darkflowWarning = '';
+    try {
+      const dfResp = await fetch('/api/register-darkflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(darkflowBody)
+      });
+      const dfData = await dfResp.json();
+      if (!dfData.darkflow || !dfData.darkflow.success) {
+        const reason = (dfData.darkflow && dfData.darkflow.data && dfData.darkflow.data.message)
+          || (dfData.darkflow && dfData.darkflow.error)
+          || (dfData.darkflow ? 'HTTP ' + dfData.darkflow.status : '无响应');
+        console.error('[darkflow] 同步失败详情:', JSON.stringify(dfData.darkflow));
+        darkflowWarning = '\n\n暗流同步失败: ' + reason + '\n（不影响本站使用，可登录后重试）';
+      }
+    } catch (e) {
+      console.error('[darkflow] 同步异常:', e.message);
+      darkflowWarning = '\n\n暗流同步失败: ' + e.message + '\n（不影响本站使用，可登录后重试）';
+    }
+
+    if (data.session) {
+      currentUser = data.user;
+      onLogin();
+      return;
+    }
+    if (data.user) {
+      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）' + darkflowWarning);
+      closeLoginModal();
+      return;
+    }
+    alert('注册请求已提交，请查看邮箱确认');
+    closeLoginModal();
+  } catch (e) {
+    console.error('注册异常:', e);
+    alert('操作失败，请重试');
   }
 }
 
 async function onLogin() {
+  if (!sb) return;
   document.getElementById('loginPrompt').style.display = 'none';
   document.getElementById('mainFrame').style.display = 'block';
   document.getElementById('btnLogin').style.display = 'none';
@@ -159,7 +301,7 @@ async function onLogin() {
   closeLoginModal();
 
   try {
-    const { data } = await supabase.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+    const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
     if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
       document.getElementById('planBadge').style.display = 'inline';
       document.getElementById('btnUpgrade').style.display = 'none';
@@ -167,7 +309,7 @@ async function onLogin() {
       loadFrame();
     }
   } catch (e) {
-    console.warn('查询订阅状态失败:', e.message);
+    console.error('订阅查询失败:', e);
   }
 }
 
@@ -177,11 +319,11 @@ function loadFrame() {
 }
 
 async function logout() {
-  if (!supabase) return;
+  if (!sbReady()) return;
   try {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
   } catch (e) {
-    console.warn('登出失败:', e.message);
+    console.error('登出失败:', e);
   }
   currentUser = null;
   document.getElementById('loginPrompt').style.display = 'block';
@@ -195,28 +337,118 @@ async function logout() {
   document.getElementById('userEmail').textContent = '';
 }
 
+// ========== Payment Flow ==========
+let pollingTimer = null;
+
 async function pay(payType) {
   if (!currentUser) return alert('请先登录');
+  const password = document.getElementById('payPassword').value.trim();
+  if (!password) return alert('请输入暗流账户密码');
+  if (password.length < 6) return alert('密码至少6位');
+
+  // 隐藏支付按钮，显示二维码区域
+  document.getElementById('btnWechatPay').style.display = 'none';
+  document.getElementById('btnAlipay').style.display = 'none';
+  document.getElementById('qrArea').style.display = 'block';
+  document.getElementById('qrStatus').textContent = '正在生成支付二维码...';
+  document.getElementById('qrStatus').style.color = '#ffd666';
+
   try {
     const resp = await fetch('/api/pay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: currentUser.id })
+      body: JSON.stringify({ user_id: currentUser.id, pay_type: payType, password })
     });
     const result = await resp.json();
-    if (result.url) {
-      window.open(result.url, '_blank');
-      closePayModal();
-      document.getElementById('planBadge').style.display = 'inline';
-      document.getElementById('btnUpgrade').style.display = 'none';
-      document.getElementById('banner').style.display = 'none';
-    } else {
-      alert('创建订单失败: ' + (result.error || '未知错误'));
+    if (result.error) {
+      document.getElementById('qrStatus').textContent = '创建订单失败: ' + result.error;
+      document.getElementById('qrStatus').style.color = '#f85149';
+      document.getElementById('btnWechatPay').style.display = 'block';
+      document.getElementById('btnAlipay').style.display = 'block';
+      return;
     }
+
+    // 展示二维码
+    if (result.qr_img) {
+      document.getElementById('qrImage').src = result.qr_img;
+    }
+    document.getElementById('qrStatus').textContent = result.msg || '请扫码支付 ￥' + (result.realmoney || result.money);
+    if (result.expires_in) {
+      document.getElementById('qrExpire').textContent = '二维码有效期至 ' + result.expires_in;
+    }
+
+    // 开始轮询支付状态
+    startPolling(result.order_no);
   } catch (e) {
-    console.error('支付异常:', e);
-    alert('支付请求失败: ' + e.message);
+    document.getElementById('qrStatus').textContent = '网络错误: ' + e.message;
+    document.getElementById('qrStatus').style.color = '#f85149';
   }
+}
+
+function startPolling(orderNo) {
+  if (pollingTimer) clearInterval(pollingTimer);
+  let pollCount = 0;
+  pollingTimer = setInterval(async () => {
+    pollCount++;
+    try {
+      const resp = await fetch('/api/query?order_no=' + orderNo);
+      const data = await resp.json();
+      if (data.status === 'success' || data.status === 'payed') {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+        document.getElementById('qrStatus').textContent = '支付成功！正在跳转暗流Pro...';
+        document.getElementById('qrStatus').style.color = '#3fb950';
+
+        // 获取暗流 token
+        try {
+          const dfResp = await fetch('/api/darkflow-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUser.id })
+          });
+          const dfData = await dfResp.json();
+          if (dfData.token) {
+            // 跳转暗流带 token
+            setTimeout(() => {
+              window.open('https://dash.hfd.fund/pro/?tf=1h&indicator=smart_money_cost&coin=BTC&hfd_token=' + encodeURIComponent(dfData.token), '_blank');
+            }, 500);
+          } else {
+            // 无 token 也跳转
+            setTimeout(() => {
+              window.open('https://dash.hfd.fund/pro/?tf=1h&indicator=smart_money_cost&coin=BTC', '_blank');
+            }, 500);
+          }
+        } catch (e) {
+          setTimeout(() => {
+            window.open('https://dash.hfd.fund/pro/?tf=1h&indicator=smart_money_cost&coin=BTC', '_blank');
+          }, 500);
+        }
+
+        // 更新 UI
+        setTimeout(() => {
+          closePayModal();
+          document.getElementById('planBadge').style.display = 'inline';
+          document.getElementById('btnUpgrade').style.display = 'none';
+          document.getElementById('banner').style.display = 'none';
+        }, 1500);
+      } else if (data.status === 'expire') {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+        document.getElementById('qrStatus').textContent = '二维码已过期，请重新支付';
+        document.getElementById('qrStatus').style.color = '#f85149';
+        document.getElementById('btnWechatPay').style.display = 'block';
+        document.getElementById('btnAlipay').style.display = 'block';
+      }
+      if (pollCount > 120) { // 10分钟超时
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+        document.getElementById('qrStatus').textContent = '支付超时，请重新操作';
+        document.getElementById('qrStatus').style.color = '#f85149';
+      }
+    } catch (e) {
+      console.error('轮询失败:', e);
+    }
+  }, 5000); // 每5秒轮询一次
 }
 </script>
 </body>
