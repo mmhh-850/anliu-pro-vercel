@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
     const { user_id, pay_type, password, money } = await parseJsonBody(req);
     if (!user_id || !pay_type || !password) return res.status(400).json({ error: 'missing user_id, pay_type or password' });
 
-    const xddPayType = pay_type === 1 ? 44 : 43;
+    const xddPayType = pay_type === 1 ? 2 : 1;
     const orderNo = 'DP' + Date.now() + Math.floor(Math.random() * 9000 + 1000);
     const orderMoney = money || '9.90';
 
