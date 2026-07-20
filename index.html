@@ -197,42 +197,26 @@ async function logout() {
 
 async function pay(payType) {
   if (!currentUser) return alert('请先登录');
-  const orderNo = 'ANLIU' + Date.now();
   try {
     const resp = await fetch('/api/pay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_no: orderNo, subject: '暗流Pro月费会员', pay_type: payType, money: 9.9, user_id: currentUser.id })
+      body: JSON.stringify({ user_id: currentUser.id })
     });
     const result = await resp.json();
     if (result.url) {
       window.open(result.url, '_blank');
       closePayModal();
-      startPolling(orderNo);
+      document.getElementById('planBadge').style.display = 'inline';
+      document.getElementById('btnUpgrade').style.display = 'none';
+      document.getElementById('banner').style.display = 'none';
     } else {
       alert('创建订单失败: ' + (result.error || '未知错误'));
     }
   } catch (e) {
-    alert('支付请求失败，请稍后重试');
+    console.error('支付异常:', e);
+    alert('支付请求失败: ' + e.message);
   }
-}
-
-function startPolling(orderNo) {
-  const interval = setInterval(async () => {
-    try {
-      const resp = await fetch('/api/query?order_no=' + orderNo);
-      const data = await resp.json();
-      if (data.result === 'success') {
-        clearInterval(interval);
-        alert('支付成功！会员已开通');
-        document.getElementById('planBadge').style.display = 'inline';
-        document.getElementById('btnUpgrade').style.display = 'none';
-        document.getElementById('banner').style.display = 'none';
-        loadFrame();
-      }
-    } catch (e) {}
-  }, 3000);
-  setTimeout(() => clearInterval(interval), 300000);
 }
 </script>
 </body>
