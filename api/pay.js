@@ -32,11 +32,19 @@ module.exports = async function handler(req, res) {
     const xddPayType = pay_type === 1 ? 44 : 43;
     const orderNo = 'DP' + Date.now() + Math.floor(Math.random() * 9000 + 1000);
     const money = '9.90';
-    const subject = '暗流Pro会员';
-    const extra = JSON.stringify({ user_id });
+
+    // 纯英文 subject，避免中文编码问题
+    const subject = 'anliupro';
+    // fallback: const subject = '暗流Pro会员';
+
+    // extra 直接用 user_id 字符串，不用 JSON 复杂格式
+    const extra = user_id;
 
     const signStr = `order_no=${orderNo}&subject=${subject}&pay_type=${xddPayType}&money=${money}&app_id=${XDD_APP_ID}&extra=${extra}&${XDD_APP_SECRET}`;
     const sign = md5(signStr);
+
+    // 调试用：隐藏 SECRET 的签名串
+    const debugSignStr = `order_no=${orderNo}&subject=${subject}&pay_type=${xddPayType}&money=${money}&app_id=${XDD_APP_ID}&extra=${extra}&SECRET`;
 
     const formData = new URLSearchParams();
     formData.append('order_no', orderNo);
@@ -98,7 +106,8 @@ module.exports = async function handler(req, res) {
       money: data.money,
       realmoney: data.realmoney,
       msg: data.msg,
-      expires_in: data.expires_in
+      expires_in: data.expires_in,
+      debug_signStr: debugSignStr
     });
 
     // 不阻塞响应，让暗流登录异步完成
