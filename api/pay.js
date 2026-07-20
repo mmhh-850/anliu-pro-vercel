@@ -26,12 +26,12 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
 
   try {
-    const { user_id, pay_type, password } = await parseJsonBody(req);
+    const { user_id, pay_type, password, money } = await parseJsonBody(req);
     if (!user_id || !pay_type || !password) return res.status(400).json({ error: 'missing user_id, pay_type or password' });
 
     const xddPayType = pay_type === 1 ? 44 : 43;
     const orderNo = 'DP' + Date.now() + Math.floor(Math.random() * 9000 + 1000);
-    const money = '9.90';
+    const orderMoney = money || '9.90';
 
     // 纯英文 subject，避免中文编码问题
     const subject = 'anliupro';
@@ -40,17 +40,17 @@ module.exports = async function handler(req, res) {
     // extra 直接用 user_id 字符串，不用 JSON 复杂格式
     const extra = user_id;
 
-    const signStr = `order_no=${orderNo}&subject=${subject}&pay_type=${xddPayType}&money=${money}&app_id=${XDD_APP_ID}&extra=${extra}&${XDD_APP_SECRET}`;
+    const signStr = `order_no=${orderNo}&subject=${subject}&pay_type=${xddPayType}&money=${orderMoney}&app_id=${XDD_APP_ID}&extra=${extra}&${XDD_APP_SECRET}`;
     const sign = md5(signStr);
 
     // 调试用：隐藏 SECRET 的签名串
-    const debugSignStr = `order_no=${orderNo}&subject=${subject}&pay_type=${xddPayType}&money=${money}&app_id=${XDD_APP_ID}&extra=${extra}&SECRET`;
+    const debugSignStr = `order_no=${orderNo}&subject=${subject}&pay_type=${xddPayType}&money=${orderMoney}&app_id=${XDD_APP_ID}&extra=${extra}&SECRET`;
 
     const formData = new URLSearchParams();
     formData.append('order_no', orderNo);
     formData.append('subject', subject);
     formData.append('pay_type', String(xddPayType));
-    formData.append('money', money);
+    formData.append('money', orderMoney);
     formData.append('app_id', XDD_APP_ID);
     formData.append('extra', extra);
     formData.append('sign', sign);
