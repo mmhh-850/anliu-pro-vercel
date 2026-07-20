@@ -60,7 +60,40 @@ module.exports = async function handler(req, res) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString()
     });
-    const data = await resp.json();
+    const respText = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(respText);
+    } catch (e) {
+      // XDD 返回非 JSON（如余额不足 HTML 页面）
+      console.error('[pay] XDD 返回非 JSON:', respText.substring(0, 500));
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(502).json({
+        error: '支付网关异常',
+        detail: respText.includes('余额不足') ? '商户余额不足，请联系管理员充值' : '支付网关返回异常，请稍后重试',
+        xdd_response_preview: respText.substring(0, 200)
+      });
+    }
+
+    // 检查 XDD 是否返回了错误
+    if (!data.xddpay_order && data.msg && data.msg.includes('余额不足')) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.json({
+        order_no: orderNo,
+        error: '商户余额不足，无法创建订单',
+        xdd_msg: data.msg,
+        debug_signStr: signStr.replace(new RegExp(XDD_APP_SECRET + '$'), '***SECRET***')
+      });
+    }
+    if (!data.xddpay_order && data.msg && data.msg.includes('签名')) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.json({
+        order_no: orderNo,
+        error: '签名错误',
+        xdd_msg: data.msg,
+        debug_signStr: signStr.replace(new RegExp(XDD_APP_SECRET + '$'), '***SECRET***')
+      });
+    }
 
     // 异步：暗流登录获取 token
     let darkflowLoginPromise = Promise.resolve();
