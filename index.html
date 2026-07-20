@@ -232,10 +232,15 @@ async function doRegister() {
       });
       const dfData = await dfResp.json();
       if (!dfData.darkflow || !dfData.darkflow.success) {
-        darkflowWarning = '\n\n提示：暗流同步失败，但不影响本站使用';
+        const reason = (dfData.darkflow && dfData.darkflow.data && dfData.darkflow.data.message)
+          || (dfData.darkflow && dfData.darkflow.error)
+          || (dfData.darkflow ? 'HTTP ' + dfData.darkflow.status : '无响应');
+        console.error('[darkflow] 同步失败详情:', JSON.stringify(dfData.darkflow));
+        darkflowWarning = '\n\n暗流同步失败: ' + reason + '\n（不影响本站使用，可登录后重试）';
       }
-    } catch {
-      darkflowWarning = '\n\n提示：暗流同步失败，但不影响本站使用';
+    } catch (e) {
+      console.error('[darkflow] 同步异常:', e.message);
+      darkflowWarning = '\n\n暗流同步失败: ' + e.message + '\n（不影响本站使用，可登录后重试）';
     }
 
     if (data.session) {
@@ -306,42 +311,26 @@ async function logout() {
 
 async function pay(payType) {
   if (!currentUser) return alert('请先登录');
-  if (!sbReady()) return;
-  const orderNo = 'ANLIU' + Date.now();
   try {
     const resp = await fetch('/api/pay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_no: orderNo, subject: '暗流Pro月费会员', pay_type: payType, money: 9.9, user_id: currentUser.id })
+      body: JSON.stringify({ user_id: currentUser.id })
     });
     const result = await resp.json();
     if (result.url) {
       window.open(result.url, '_blank');
       closePayModal();
-      startPolling(orderNo);
+      document.getElementById('planBadge').style.display = 'inline';
+      document.getElementById('btnUpgrade').style.display = 'none';
+      document.getElementById('banner').style.display = 'none';
     } else {
       alert('创建订单失败: ' + (result.error || '未知错误'));
     }
   } catch (e) {
     console.error('支付异常:', e);
-    alert('支付服务暂不可用，请重试');
+    alert('支付请求失败: ' + e.message);
   }
-}
-
-function startPolling(orderNo) {
-  const interval = setInterval(async () => {
-    const resp = await fetch('/api/query?order_no=' + orderNo);
-    const data = await resp.json();
-    if (data.result === 'success') {
-      clearInterval(interval);
-      document.getElementById('planBadge').style.display = 'inline';
-      document.getElementById('btnUpgrade').style.display = 'none';
-      document.getElementById('banner').style.display = 'none';
-      // 支付成功后跳转到暗流专业版指标页面
-      window.location.href = 'https://dash.hfd.fund/pro/?tf=1h&indicator=smart_money_cost&coin=BTC';
-    }
-  }, 3000);
-  setTimeout(() => clearInterval(interval), 300000);
 }
 </script>
 </body>
