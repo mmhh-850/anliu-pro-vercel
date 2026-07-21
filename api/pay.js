@@ -48,12 +48,21 @@ module.exports = async function handler(req, res) {
 
     console.log(`[pay] user_id=${user_id} pay_type=${finalPayType}->xdd=${xddPayType} money=${amount}`);
 
-    const resp = await fetch(`${XDD_GATEWAY}?format=json`, {
+    const xddUrl = `${XDD_GATEWAY}?format=json`;
+    const resp = await fetch(xddUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString()
     });
-    const data = await resp.json();
+
+    const text = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(502).json({ error: 'XDD non-JSON response', raw: text.substring(0, 500) });
+    }
 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({ order_no: orderNo, ...data });
