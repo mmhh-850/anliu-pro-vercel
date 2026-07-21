@@ -309,13 +309,14 @@ async function logout() {
   document.getElementById('userEmail').textContent = '';
 }
 
-async function pay(payType) {
+async function pay(payType, money) {
   if (!currentUser) return alert('请先登录');
+  const amount = money || '9.90';
   try {
     const resp = await fetch('/api/pay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: currentUser.id })
+      body: JSON.stringify({ user_id: currentUser.id, pay_type: payType, money: amount })
     });
     const result = await resp.json();
     if (result.url) {
