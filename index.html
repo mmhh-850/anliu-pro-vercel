@@ -155,7 +155,6 @@ function showPayModal() {
   hideQr();
   document.getElementById('btnPayNow').disabled = false;
 }
-function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
 
 // ========== Supabase Initialization (safe, won't block script) ==========
 (function() {
@@ -366,10 +365,15 @@ function hideQr() {
   document.getElementById('qrError').style.display = 'none';
 }
 
+let paymentPollTimer = null;
+
 async function doPay() {
   if (!currentUser) return alert('请先登录');
   const payType = selectedPayMethod;
   const amount = selectedPlan.money;
+
+  // 清除旧的轮询
+  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
 
   // 显示加载状态
   document.getElementById('qrContainer').style.display = 'none';
@@ -393,6 +397,8 @@ async function doPay() {
     if (qrSrc) {
       document.getElementById('qrImage').src = qrSrc;
       document.getElementById('qrContainer').style.display = 'block';
+      // 二维码展示后启动订阅状态轮询
+      startPaymentPolling();
     } else {
       document.getElementById('qrError').textContent = '获取支付二维码失败: ' + (result.error || '暂无可用二维码，请稍后重试');
       document.getElementById('qrError').style.display = 'block';
@@ -404,6 +410,41 @@ async function doPay() {
     document.getElementById('qrError').textContent = '支付请求失败: ' + e.message;
     document.getElementById('qrError').style.display = 'block';
   }
+}
+
+function startPaymentPolling() {
+  let pollCount = 0;
+  const maxPolls = 100; // 最多轮询100次（约5分钟）
+  const pollInterval = 3000;
+
+  paymentPollTimer = setInterval(async () => {
+    pollCount++;
+    try {
+      const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+      if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
+        // 支付成功：关闭弹窗 + 加载暗流内容
+        clearInterval(paymentPollTimer);
+        paymentPollTimer = null;
+        closePayModal();
+        document.getElementById('planBadge').style.display = 'inline';
+        document.getElementById('btnUpgrade').style.display = 'none';
+        document.getElementById('banner').style.display = 'none';
+        loadFrame();
+      }
+    } catch (e) {
+      console.error('轮询订阅状态失败:', e);
+    }
+    if (pollCount >= maxPolls) {
+      clearInterval(paymentPollTimer);
+      paymentPollTimer = null;
+    }
+  }, pollInterval);
+}
+
+function closePayModal() {
+  document.getElementById('payModal').classList.remove('active');
+  // 关闭弹窗时停止轮询
+  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
 }
 </script>
 </body>
