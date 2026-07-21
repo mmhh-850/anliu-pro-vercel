@@ -8,6 +8,18 @@ function md5(text) {
   return crypto.createHash('md5').update(text).digest('hex').toUpperCase();
 }
 
+async function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk.toString());
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); }
+      catch (e) { resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,7 +27,11 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { user_id, pay_type, money } = req.body;
+    const body = typeof req.body === 'object' && req.body && Object.keys(req.body).length > 0
+      ? req.body
+      : await readBody(req);
+
+    const { user_id, pay_type, money } = body;
 
     if (!user_id) {
       res.setHeader('Access-Control-Allow-Origin', '*');
