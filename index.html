@@ -99,13 +99,36 @@
 </div>
 
 <div class="modal-overlay" id="payModal">
-  <div class="modal">
+  <div class="modal" style="width:420px;">
     <h2>升级暗流Pro会员</h2>
-    <p style="color:#8b949e;margin-bottom:12px;">￥9.9 / 月 · 解锁全部专业指标</p>
-    <button class="btn btn-primary" id="btnWechatPay" onclick="pay(1)">微信支付 ￥9.9</button>
-    <button class="btn" id="btnAlipay" onclick="pay(2)" style="margin-top:8px;">支付宝 ￥9.9</button>
-    <button class="btn" onclick="closePayModal()" style="margin-top:8px;">取消</button>
-    <div class="tip">支付成功后自动开通，有效期30天</div>
+    <!-- 方案选择 -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <div class="plan-card active" id="plan9" onclick="selectPlan('9.90','7天体验')"
+           style="flex:1;border:2px solid #58a6ff;border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:border-color 0.2s;">
+        <div style="font-size:18px;font-weight:bold;color:#f0f6fc;">￥9.90</div>
+        <div style="font-size:12px;color:#8b949e;">7天体验</div>
+      </div>
+      <div class="plan-card" id="plan29" onclick="selectPlan('29.90','月卡')"
+           style="flex:1;border:2px solid #30363d;border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:border-color 0.2s;">
+        <div style="font-size:18px;font-weight:bold;color:#f0f6fc;">￥29.90</div>
+        <div style="font-size:12px;color:#8b949e;">月卡</div>
+      </div>
+    </div>
+    <!-- 支付方式选择 -->
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <button class="btn btn-primary" id="payMethodWechat" onclick="selectPayMethod(1)" style="flex:1;">微信支付</button>
+      <button class="btn" id="payMethodAlipay" onclick="selectPayMethod(2)" style="flex:1;">支付宝</button>
+    </div>
+    <!-- 状态区域 -->
+    <div id="qrLoading" style="display:none; text-align:center; padding:20px; color:#8b949e;">正在获取支付二维码...</div>
+    <div id="qrContainer" style="display:none; text-align:center; margin:12px 0;">
+      <img id="qrImage" style="max-width:220px; max-height:220px; border-radius:8px;" alt="支付二维码" />
+      <p style="color:#8b949e;font-size:12px;margin-top:8px;">请用对应App扫码支付</p>
+    </div>
+    <div id="qrError" style="display:none; text-align:center; padding:16px; color:#f85149;font-size:13px;"></div>
+    <button class="btn btn-primary" id="btnPayNow" onclick="doPay()" style="width:100%;">立即支付</button>
+    <button class="btn" onclick="closePayModal()" style="margin-top:8px;width:100%;">取消</button>
+    <div class="tip">支付成功后自动开通，有效期见所选方案</div>
   </div>
 </div>
 
@@ -124,7 +147,14 @@ function showLoginModal() {
   switchTab('login');
 }
 function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
-function showPayModal() { document.getElementById('payModal').classList.add('active'); }
+function showPayModal() {
+  document.getElementById('payModal').classList.add('active');
+  // 重置为默认方案
+  selectPlan('9.90', '7天体验');
+  selectPayMethod(1);
+  hideQr();
+  document.getElementById('btnPayNow').disabled = false;
+}
 function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
 
 // ========== Supabase Initialization (safe, won't block script) ==========
@@ -309,9 +339,44 @@ async function logout() {
   document.getElementById('userEmail').textContent = '';
 }
 
-async function pay(payType, money) {
+// 支付弹窗状态
+let selectedPlan = { money: '9.90', label: '7天体验' };
+let selectedPayMethod = 1; // 1=微信, 2=支付宝
+
+function selectPlan(money, label) {
+  selectedPlan.money = money;
+  selectedPlan.label = label;
+  document.getElementById('plan9').style.borderColor = money === '9.90' ? '#58a6ff' : '#30363d';
+  document.getElementById('plan29').style.borderColor = money === '29.90' ? '#58a6ff' : '#30363d';
+  // 切换方案时重置二维码显示
+  hideQr();
+}
+
+function selectPayMethod(method) {
+  selectedPayMethod = method;
+  document.getElementById('payMethodWechat').className = method === 1 ? 'btn btn-primary' : 'btn';
+  document.getElementById('payMethodAlipay').className = method === 2 ? 'btn btn-primary' : 'btn';
+  // 切换支付方式时重置二维码显示
+  hideQr();
+}
+
+function hideQr() {
+  document.getElementById('qrContainer').style.display = 'none';
+  document.getElementById('qrLoading').style.display = 'none';
+  document.getElementById('qrError').style.display = 'none';
+}
+
+async function doPay() {
   if (!currentUser) return alert('请先登录');
-  const amount = money || '9.90';
+  const payType = selectedPayMethod;
+  const amount = selectedPlan.money;
+
+  // 显示加载状态
+  document.getElementById('qrContainer').style.display = 'none';
+  document.getElementById('qrError').style.display = 'none';
+  document.getElementById('qrLoading').style.display = 'block';
+  document.getElementById('btnPayNow').disabled = true;
+
   try {
     const resp = await fetch('/api/pay', {
       method: 'POST',
@@ -319,18 +384,25 @@ async function pay(payType, money) {
       body: JSON.stringify({ user_id: currentUser.id, pay_type: payType, money: amount })
     });
     const result = await resp.json();
-    if (result.url) {
-      window.open(result.url, '_blank');
-      closePayModal();
-      document.getElementById('planBadge').style.display = 'inline';
-      document.getElementById('btnUpgrade').style.display = 'none';
-      document.getElementById('banner').style.display = 'none';
+
+    document.getElementById('qrLoading').style.display = 'none';
+    document.getElementById('btnPayNow').disabled = false;
+
+    // 兼容 qr_img (base64) 和 qr (URL) 两种返回格式
+    const qrSrc = result.qr_img || result.qr || result.url;
+    if (qrSrc) {
+      document.getElementById('qrImage').src = qrSrc;
+      document.getElementById('qrContainer').style.display = 'block';
     } else {
-      alert('创建订单失败: ' + (result.error || '未知错误'));
+      document.getElementById('qrError').textContent = '获取支付二维码失败: ' + (result.error || '暂无可用二维码，请稍后重试');
+      document.getElementById('qrError').style.display = 'block';
     }
   } catch (e) {
     console.error('支付异常:', e);
-    alert('支付请求失败: ' + e.message);
+    document.getElementById('qrLoading').style.display = 'none';
+    document.getElementById('btnPayNow').disabled = false;
+    document.getElementById('qrError').textContent = '支付请求失败: ' + e.message;
+    document.getElementById('qrError').style.display = 'block';
   }
 }
 </script>
