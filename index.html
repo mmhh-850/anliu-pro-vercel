@@ -319,16 +319,8 @@ async function onLogin() {
 function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
-  fetch(PROXY_BASE + '/pro')
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-      var inject = '<base href="https://dash.hfd.fund/">\n<scr' + 'ipt>(function(){var _f=window.fetch;window.fetch=function(u,o){if(typeof u==="string"&&u.indexOf("gash.hz.fundsol")!==-1)u=u.replace("https://gash.hz.fundsol/","/api/proxy/_gash/");return _f.call(this,u,o)};var _o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(typeof u==="string"&&u.indexOf("gash.hz.fundsol")!==-1)u=u.replace("https://gash.hz.fundsol/","/api/proxy/_gash/");return _o.apply(this,arguments)}})();</scr' + 'ipt>';
-      html = html.replace(/<head[^>]*>/i, '$&' + inject);
-      iframe.srcdoc = html;
-    }).catch(function(e) {
-      console.error('Frame load failed:', e);
-      iframe.src = PROXY_BASE + '/pro';
-    });
+  // Load directly to preserve origin for CORS (dash.hfd.fund allows iframe embedding)
+  iframe.src = 'https://dash.hfd.fund/pro';
 }
 
 async function logout() {
@@ -341,7 +333,7 @@ async function logout() {
   currentUser = null;
   document.getElementById('loginPrompt').style.display = 'block';
   document.getElementById('mainFrame').style.display = 'none';
-  document.getElementById('mainFrame').src = ''; document.getElementById('mainFrame').srcdoc = '';
+  document.getElementById('mainFrame').src = '';
   document.getElementById('btnLogin').style.display = 'inline-block';
   document.getElementById('btnLogout').style.display = 'none';
   document.getElementById('btnUpgrade').style.display = 'none';
