@@ -1,6 +1,9 @@
 const https = require('https');
 
-const TARGET_URL = 'https://dash.hfd.fund';
+const DASH_URL = 'https://dash.hfd.fund';
+const GASH_URL = 'https://gash.hz.fundsol';
+const PROXY_GASH_PREFIX = Buffer.from('/api/proxy-gash/');
+const GASH_PATTERN = Buffer.from('https://gash.hz.fundsol/');
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -11,17 +14,41 @@ function readBody(req) {
   });
 }
 
+function findPattern(buf, pattern) {
+  var blen = buf.length, plen = pattern.length;
+  for (var i = 0; i <= blen - plen; i++) {
+    var ok = true;
+    for (var j = 0; j < plen && ok; j++) {
+      if (buf[i + j] !== pattern[j]) ok = false;
+    }
+    if (ok) return i;
+  }
+  return -1;
+}
+
+function replaceAllPattern(buf, pattern, replacement) {
+  var result = [];
+  var pos = 0, idx;
+  while ((idx = findPattern(buf.slice(pos), pattern)) !== -1) {
+    result.push(buf.slice(pos, pos + idx));
+    result.push(replacement);
+    pos += idx + pattern.length;
+  }
+  result.push(buf.slice(pos));
+  return Buffer.concat(result);
+}
+
 module.exports = async function handler(req, res) {
-  const pathParts = req.query.path || [];
-  const path = pathParts.join('/');
-  const query = req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : '';
-  const targetUrl = TARGET_URL + '/' + path + query;
+  var pathParts = req.query.path || [];
+  var path = pathParts.join('/');
+  var query = req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : '';
+  var targetUrl = DASH_URL + '/' + path + query;
 
   try {
-    const rawBody = await readBody(req);
-    const parsed = new URL(targetUrl);
+    var rawBody = await readBody(req);
+    var parsed = new URL(targetUrl);
 
-    const options = {
+    var options = {
       hostname: parsed.hostname,
       port: parsed.port || 443,
       path: parsed.pathname + parsed.search,
@@ -30,40 +57,46 @@ module.exports = async function handler(req, res) {
       timeout: 30000,
     };
 
-    for (const [k, v] of Object.entries(req.headers)) {
+    for (var k in req.headers) {
       if (k === 'host') options.headers[k] = parsed.hostname;
-      else if (k !== 'origin' && k !== 'referer') options.headers[k] = v;
+      else if (k !== 'origin' && k !== 'referer') options.headers[k] = req.headers[k];
     }
 
-    const proxyResult = await new Promise((resolve, reject) => {
-      const proxyReq = https.request(options, (proxyRes) => {
-        const chunks = [];
-        proxyRes.on('data', (chunk) => chunks.push(chunk));
-        proxyRes.on('end', () => {
+    var proxyResult = await new Promise(function(resolve, reject) {
+      var proxyReq = https.request(options, function(proxyRes) {
+        var chunks = [];
+        proxyRes.on('data', function(chunk) { chunks.push(chunk); });
+        proxyRes.on('end', function() {
           resolve({ status: proxyRes.statusCode, headers: proxyRes.headers, body: Buffer.concat(chunks) });
         });
         proxyRes.on('error', reject);
       });
       proxyReq.on('error', reject);
-      proxyReq.on('timeout', () => { proxyReq.destroy(); reject(new Error('Upstream timeout')); });
+      proxyReq.on('timeout', function() { proxyReq.destroy(); reject(new Error('Upstream timeout')); });
       if (req.method !== 'GET' && req.method !== 'HEAD' && rawBody.length > 0) {
         proxyReq.write(rawBody);
       }
       proxyReq.end();
     });
 
-    const skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
-    for (const [k, v] of Object.entries(proxyResult.headers)) {
-      if (k && v && !skipHeaders.includes(k.toLowerCase())) {
-        res.setHeader(k, v);
+    var skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
+    for (var hk in proxyResult.headers) {
+      if (hk && proxyResult.headers[hk] && skipHeaders.indexOf(hk.toLowerCase()) === -1) {
+        res.setHeader(hk, proxyResult.headers[hk]);
       }
     }
 
+    var body = proxyResult.body;
+    var ct = (proxyResult.headers['content-type'] || '').toLowerCase();
+    if (body.length > 0 && ct.indexOf('text/html') !== -1) {
+      body = replaceAllPattern(body, GASH_PATTERN, PROXY_GASH_PREFIX);
+    }
+
     res.status(proxyResult.status);
-    if (proxyResult.body.length > 0) {
-      res.send(proxyResult.body);
+    if (body.length > 0) {
+      res.send(body);
     } else {
-      res.send(proxyResult.body.toString('utf-8'));
+      res.send('');
     }
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
