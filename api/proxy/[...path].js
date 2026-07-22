@@ -61,14 +61,9 @@ module.exports = async function handler(req, res) {
 
     res.status(proxyResult.status);
     if (proxyResult.body.length > 0) {
-      var ct = (proxyResult.headers['content-type'] || '').toLowerCase();
-      if (ct.indexOf('text/html') !== -1) {
-        var html = proxyResult.body.toString('utf-8');
-        html = html.replace('<head>', '<head><base href="https://dash.hfd.fund/">');
-        res.send(Buffer.from(html, 'utf-8'));
-      } else {
-        res.send(proxyResult.body);
-      }
+      // Test: Buffer.from roundtrip
+      var buf = Buffer.from(proxyResult.body.toString('utf-8'), 'utf-8');
+      res.send(buf);
     } else {
       res.send(proxyResult.body.toString('utf-8'));
     }
