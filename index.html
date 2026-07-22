@@ -319,7 +319,8 @@ async function onLogin() {
 function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
-  iframe.src = 'https://dash.hfd.fund/pro';
+  // Use proxy to bypass X-Frame-Options and maintain origin
+  iframe.src = PROXY_BASE + '/pro';
   iframe.onload = function() {
     try {
       var doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -332,40 +333,35 @@ function loadFrame() {
         doc.head.insertBefore(base, doc.head.firstChild);
       }
       
-      // Dismiss any login overlay/modal
+      // Dismiss any login overlay/modal after page renders
       setTimeout(function() {
         try {
-          // Try common overlay patterns
-          var overlays = doc.querySelectorAll('[class*="modal"], [class*="overlay"], [class*="login"], [class*="mask"], .el-dialog, .ant-modal');
-          for (var i = 0; i < overlays.length; i++) {
-            var el = overlays[i];
-            if (el.textContent.indexOf('登录') !== -1 || el.textContent.indexOf('login') !== -1) {
-              el.style.display = 'none';
-              el.remove();
+          // Remove modal overlays containing login text
+          var allDivs = doc.querySelectorAll('div');
+          for (var i = 0; i < allDivs.length; i++) {
+            var d = allDivs[i];
+            var txt = d.textContent || '';
+            var cls = (d.className || '').toString();
+            var st = (d.getAttribute('style') || '').toString();
+            if ((txt.indexOf('登录') !== -1 || txt.indexOf('login') !== -1) &&
+                (cls.indexOf('modal') !== -1 || cls.indexOf('overlay') !== -1 || cls.indexOf('dialog') !== -1 || cls.indexOf('mask') !== -1 ||
+                 st.indexOf('fixed') !== -1 || st.indexOf('absolute') !== -1)) {
+              d.style.display = 'none';
             }
           }
-          // Remove body-level overlays
-          var bodyOverlays = doc.querySelectorAll('body > div[style*="position"], body > div[class*="mask"], body > div[class*="overlay"]');
-          for (var j = 0; j < bodyOverlays.length; j++) {
-            var bel = bodyOverlays[j];
-            if (bel.textContent.indexOf('登录') !== -1 || bel.textContent.indexOf('login') !== -1) {
-              bel.style.display = 'none';
-              bel.remove();
-            }
-          }
-          // Unlock body scroll and remove blur
-          doc.body.style.overflow = '';
-          doc.body.style.filter = '';
-          var blurred = doc.querySelectorAll('[style*="blur"]');
-          for (var k = 0; k < blurred.length; k++) {
-            blurred[k].style.filter = '';
+          // Remove body mask/blur
+          doc.body.style.overflow = 'auto';
+          doc.body.style.filter = 'none';
+          var masks = doc.querySelectorAll('[class*="mask"], [class*="overlay"], [class*="backdrop"]');
+          for (var j = 0; j < masks.length; j++) {
+            masks[j].style.display = 'none';
           }
         } catch(e2) {
-          console.log('Overlay dismiss failed:', e2);
+          console.log('Dismiss failed:', e2);
         }
-      }, 1500);
+      }, 2000);
     } catch(e) {
-      console.log('Iframe injection failed:', e);
+      console.log('Iframe inject failed:', e);
     }
   };
 }
