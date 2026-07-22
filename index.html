@@ -319,8 +319,55 @@ async function onLogin() {
 function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
-  // Load directly to preserve origin for CORS (dash.hfd.fund allows iframe embedding)
   iframe.src = 'https://dash.hfd.fund/pro';
+  iframe.onload = function() {
+    try {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (!doc) return;
+      
+      // Inject base tag for asset resolution
+      if (!doc.querySelector('base')) {
+        var base = doc.createElement('base');
+        base.href = 'https://dash.hfd.fund/';
+        doc.head.insertBefore(base, doc.head.firstChild);
+      }
+      
+      // Dismiss any login overlay/modal
+      setTimeout(function() {
+        try {
+          // Try common overlay patterns
+          var overlays = doc.querySelectorAll('[class*="modal"], [class*="overlay"], [class*="login"], [class*="mask"], .el-dialog, .ant-modal');
+          for (var i = 0; i < overlays.length; i++) {
+            var el = overlays[i];
+            if (el.textContent.indexOf('登录') !== -1 || el.textContent.indexOf('login') !== -1) {
+              el.style.display = 'none';
+              el.remove();
+            }
+          }
+          // Remove body-level overlays
+          var bodyOverlays = doc.querySelectorAll('body > div[style*="position"], body > div[class*="mask"], body > div[class*="overlay"]');
+          for (var j = 0; j < bodyOverlays.length; j++) {
+            var bel = bodyOverlays[j];
+            if (bel.textContent.indexOf('登录') !== -1 || bel.textContent.indexOf('login') !== -1) {
+              bel.style.display = 'none';
+              bel.remove();
+            }
+          }
+          // Unlock body scroll and remove blur
+          doc.body.style.overflow = '';
+          doc.body.style.filter = '';
+          var blurred = doc.querySelectorAll('[style*="blur"]');
+          for (var k = 0; k < blurred.length; k++) {
+            blurred[k].style.filter = '';
+          }
+        } catch(e2) {
+          console.log('Overlay dismiss failed:', e2);
+        }
+      }, 1500);
+    } catch(e) {
+      console.log('Iframe injection failed:', e);
+    }
+  };
 }
 
 async function logout() {
