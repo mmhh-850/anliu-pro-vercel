@@ -1,6 +1,8 @@
 const https = require('https');
 
 const TARGET_URL = 'https://dash.hfd.fund';
+const BASE_TAG = Buffer.from('<base href="https://dash.hfd.fund/">', 'utf-8');
+const HEAD_TAG = Buffer.from('<head>', 'utf-8');
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -52,20 +54,34 @@ module.exports = async function handler(req, res) {
       proxyReq.end();
     });
 
-    const skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
-    for (const [k, v] of Object.entries(proxyResult.headers)) {
-      if (k && v && !skipHeaders.includes(k.toLowerCase())) {
-        res.setHeader(k, v);
+    var body = proxyResult.body;
+
+    // Inject base tag using pure Buffer operations
+    var ct = (proxyResult.headers['content-type'] || '').toLowerCase();
+    if (body.length > 0 && ct.indexOf('text/html') !== -1) {
+      var headIdx = body.indexOf(HEAD_TAG);
+      if (headIdx !== -1) {
+        var before = body.slice(0, headIdx + 6);
+        var after = body.slice(headIdx + 6);
+        body = Buffer.concat([before, BASE_TAG, after]);
+      }
+    }
+
+    var skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
+    for (var k in proxyResult.headers) {
+      if (proxyResult.headers.hasOwnProperty(k)) {
+        var v = proxyResult.headers[k];
+        if (k && v && skipHeaders.indexOf(k.toLowerCase()) === -1) {
+          res.setHeader(k, v);
+        }
       }
     }
 
     res.status(proxyResult.status);
-    if (proxyResult.body.length > 0) {
-      // Test: Buffer.from roundtrip
-      var buf = Buffer.from(proxyResult.body.toString('utf-8'), 'utf-8');
-      res.send(buf);
+    if (body.length > 0) {
+      res.send(body);
     } else {
-      res.send(proxyResult.body.toString('utf-8'));
+      res.send(body.toString('utf-8'));
     }
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
