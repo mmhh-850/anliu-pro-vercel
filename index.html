@@ -322,7 +322,7 @@ function loadFrame() {
   fetch(PROXY_BASE + '/pro')
     .then(function(r) { return r.text(); })
     .then(function(html) {
-      var inject = '<base href="https://dash.hfd.fund/">\n<scr' + 'ipt>(function(){var _f=window.fetch;window.fetch=function(u,o){if(typeof u==="string"&&u.indexOf("gash.hz.fundsol")!==-1)u=u.replace("https://gash.hz.fundsol/","/api/proxy-gash/");return _f.call(this,u,o)};var _o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(typeof u==="string"&&u.indexOf("gash.hz.fundsol")!==-1)u=u.replace("https://gash.hz.fundsol/","/api/proxy-gash/");return _o.apply(this,arguments)}})();</scr' + 'ipt>';
+      var inject = '<base href="https://dash.hfd.fund/">\n<scr' + 'ipt>(function(){var _f=window.fetch;window.fetch=function(u,o){if(typeof u==="string"&&u.indexOf("gash.hz.fundsol")!==-1)u=u.replace("https://gash.hz.fundsol/","/api/proxy/?upstream=gash&path=");return _f.call(this,u,o)};var _o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(typeof u==="string"&&u.indexOf("gash.hz.fundsol")!==-1)u=u.replace("https://gash.hz.fundsol/","/api/proxy/?upstream=gash&path=");return _o.apply(this,arguments)}})();</scr' + 'ipt>';
       html = html.replace(/<head[^>]*>/i, '$&' + inject);
       iframe.srcdoc = html;
     }).catch(function(e) {
