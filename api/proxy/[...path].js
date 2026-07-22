@@ -52,23 +52,22 @@ module.exports = async function handler(req, res) {
       proxyReq.end();
     });
 
-    const contentType = (proxyResult.headers['content-type'] || '').toLowerCase();
-    let body = proxyResult.body;
-    let modified = false;
-
-    // Inject base tag for HTML to fix relative asset paths
-    if (contentType.indexOf('text/html') !== -1 && body.length > 0) {
-      let html = body.toString('utf-8');
-      html = html.replace('<head>', '<head><base href=\"' + TARGET_URL + '/\">');
-      body = Buffer.from(html, 'utf-8');
-      modified = true;
+    const ct = (proxyResult.headers['content-type'] || '').toLowerCase();
+    let respBody;
+    
+    if (proxyResult.body.length > 0) {
+      if (ct.indexOf('text/html') !== -1) {
+        let html = proxyResult.body.toString('utf-8');
+        html = html.replace('<head>', '<head><base href="https://dash.hfd.fund/">');
+        respBody = html;
+      } else {
+        respBody = proxyResult.body;
+      }
+    } else {
+      respBody = '';
     }
 
-    // Pass through headers, skip problematic ones
-    const skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
-    // Also skip content-length if we modified the body
-    if (modified) skipHeaders.push('content-length');
-    
+    const skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding', 'content-length'];
     for (const [k, v] of Object.entries(proxyResult.headers)) {
       if (k && v && !skipHeaders.includes(k.toLowerCase())) {
         res.setHeader(k, v);
@@ -76,11 +75,7 @@ module.exports = async function handler(req, res) {
     }
 
     res.status(proxyResult.status);
-    if (body.length > 0) {
-      res.send(body);
-    } else {
-      res.send('');
-    }
+    res.send(respBody);
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
   }
