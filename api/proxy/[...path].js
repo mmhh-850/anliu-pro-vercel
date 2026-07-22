@@ -39,10 +39,12 @@ function replaceAllPattern(buf, pattern, replacement) {
 }
 
 module.exports = async function handler(req, res) {
+  var upstream = req.query.upstream;
   var pathParts = req.query.path || [];
   var path = pathParts.join('/');
   var query = req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : '';
-  var targetUrl = DASH_URL + '/' + path + query;
+  var baseUrl = (upstream === 'gash') ? GASH_URL : DASH_URL;
+  var targetUrl = baseUrl + '/' + path + query;
 
   try {
     var rawBody = await readBody(req);
