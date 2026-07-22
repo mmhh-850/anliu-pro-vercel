@@ -52,29 +52,18 @@ module.exports = async function handler(req, res) {
       proxyReq.end();
     });
 
-    // Inject base tag for HTML to fix relative asset paths
-    var sendBody = proxyResult.body;
-    var ct = (proxyResult.headers['content-type'] || '').toLowerCase();
-    if (sendBody.length > 0 && ct.indexOf('text/html') !== -1) {
-      var html = sendBody.toString('utf-8');
-      html = html.replace('<head>', '<head><base href="https://dash.hfd.fund/">');
-      sendBody = Buffer.from(html, 'utf-8');
-    }
-
-    var skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding', 'content-length'];
-    for (var i = 0; i < Object.keys(proxyResult.headers).length; i++) {
-      var k = Object.keys(proxyResult.headers)[i];
-      var v = proxyResult.headers[k];
-      if (k && v && skipHeaders.indexOf(k.toLowerCase()) === -1) {
+    const skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
+    for (const [k, v] of Object.entries(proxyResult.headers)) {
+      if (k && v && !skipHeaders.includes(k.toLowerCase())) {
         res.setHeader(k, v);
       }
     }
 
     res.status(proxyResult.status);
-    if (sendBody.length > 0) {
-      res.send(sendBody);
+    if (proxyResult.body.length > 0) {
+      res.send(proxyResult.body);
     } else {
-      res.send(sendBody.toString('utf-8'));
+      res.send(proxyResult.body.toString('utf-8'));
     }
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
