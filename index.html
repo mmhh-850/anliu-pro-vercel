@@ -318,6 +318,18 @@ async function onLogin() {
 function loadFrame() {
   const iframe = document.getElementById('mainFrame');
   iframe.src = PROXY_BASE + '/pro';
+  iframe.onload = function() {
+    try {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (doc && !doc.querySelector('base')) {
+        var base = doc.createElement('base');
+        base.href = "https://dash.hfd.fund/";
+        doc.head.insertBefore(base, doc.head.firstChild);
+      }
+    } catch(e) {
+      console.log('Base tag injection failed:', e);
+    }
+  };
 }
 
 async function logout() {
