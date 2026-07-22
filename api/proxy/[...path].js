@@ -52,7 +52,23 @@ module.exports = async function handler(req, res) {
       proxyReq.end();
     });
 
+    const contentType = (proxyResult.headers['content-type'] || '').toLowerCase();
+    let body = proxyResult.body;
+    let modified = false;
+
+    // Inject base tag for HTML to fix relative asset paths
+    if (contentType.indexOf('text/html') !== -1 && body.length > 0) {
+      let html = body.toString('utf-8');
+      html = html.replace('<head>', '<head><base href=\"' + TARGET_URL + '/\">');
+      body = Buffer.from(html, 'utf-8');
+      modified = true;
+    }
+
+    // Pass through headers, skip problematic ones
     const skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
+    // Also skip content-length if we modified the body
+    if (modified) skipHeaders.push('content-length');
+    
     for (const [k, v] of Object.entries(proxyResult.headers)) {
       if (k && v && !skipHeaders.includes(k.toLowerCase())) {
         res.setHeader(k, v);
@@ -60,10 +76,10 @@ module.exports = async function handler(req, res) {
     }
 
     res.status(proxyResult.status);
-    if (proxyResult.body.length > 0) {
-      res.send(proxyResult.body);
+    if (body.length > 0) {
+      res.send(body);
     } else {
-      res.send(proxyResult.body.toString('utf-8'));
+      res.send('');
     }
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
