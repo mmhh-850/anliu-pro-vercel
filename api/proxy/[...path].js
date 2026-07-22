@@ -59,21 +59,11 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const contentType = (proxyResult.headers['content-type'] || '').toLowerCase();
-    let body = proxyResult.body.length > 0 ? proxyResult.body : Buffer.from('');
-
-    // Inject base tag to fix relative asset URLs
-    if (contentType.indexOf('text/html') !== -1 && body.length > 0) {
-      let html = body.toString('utf-8');
-      html = html.replace('<head>', '<head><base href="' + TARGET_URL + '/">');
-      body = Buffer.from(html, 'utf-8');
-    }
-
     res.status(proxyResult.status);
-    if (body.length > 0) {
-      res.send(body);
+    if (proxyResult.body.length > 0) {
+      res.send(proxyResult.body);
     } else {
-      res.send(body.toString('utf-8'));
+      res.send(proxyResult.body.toString('utf-8'));
     }
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
