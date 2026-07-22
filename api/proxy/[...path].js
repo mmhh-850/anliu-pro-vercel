@@ -59,24 +59,11 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    var body = proxyResult.body;
-    var ct = (proxyResult.headers['content-type'] || '').toLowerCase();
-    if (body.length > 0 && ct.indexOf('text/html') !== -1) {
-      var idx = body.indexOf('<head>');
-      if (idx !== -1) {
-        body = Buffer.concat([
-          body.slice(0, idx + 6),
-          Buffer.from('<base href="' + TARGET_URL + '/">'),
-          body.slice(idx + 6)
-        ]);
-      }
-    }
-
     res.status(proxyResult.status);
-    if (body.length > 0) {
-      res.send(body);
+    if (proxyResult.body.length > 0) {
+      res.send(proxyResult.body);
     } else {
-      res.send('');
+      res.send(proxyResult.body.toString('utf-8'));
     }
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
