@@ -308,6 +308,7 @@ async function onLogin() {
       document.getElementById('planBadge').style.display = 'inline';
       document.getElementById('btnUpgrade').style.display = 'none';
       document.getElementById('banner').style.display = 'none';
+      document.getElementById('iframeWrapper').style.display = 'block';
       loadFrame();
     }
   } catch (e) {
@@ -442,6 +443,7 @@ function startPaymentPolling() {
         document.getElementById('planBadge').style.display = 'inline';
         document.getElementById('btnUpgrade').style.display = 'none';
         document.getElementById('banner').style.display = 'none';
+        document.getElementById('iframeWrapper').style.display = 'block';
         loadFrame();
       }
     } catch (e) {
