@@ -61,9 +61,14 @@ module.exports = async function handler(req, res) {
 
     res.status(proxyResult.status);
     if (proxyResult.body.length > 0) {
-      // TEST: just convert to string and back, no modification
-      var str = proxyResult.body.toString('utf-8');
-      res.send(str);
+      var ct = (proxyResult.headers['content-type'] || '').toLowerCase();
+      if (ct.indexOf('text/html') !== -1) {
+        var html = proxyResult.body.toString('utf-8');
+        html = html.replace('<head>', '<head><base href="https://dash.hfd.fund/">');
+        res.send(Buffer.from(html, 'utf-8'));
+      } else {
+        res.send(proxyResult.body);
+      }
     } else {
       res.send(proxyResult.body.toString('utf-8'));
     }
