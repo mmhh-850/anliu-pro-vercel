@@ -40,14 +40,10 @@ module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(response.status);
 
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('text/html') || contentType.includes('text/css') || contentType.includes('javascript')) {
-      const text = await response.text();
-      res.send(text);
-    } else {
-      const buffer = await response.arrayBuffer();
-      res.send(Buffer.from(buffer));
-    }
+    // Use arrayBuffer + Buffer for all responses to handle Cloudflare chunked encoding on Vercel
+    const buf = await response.arrayBuffer();
+    const text = Buffer.from(buf).toString('utf-8');
+    res.send(text);
   } catch (e) {
     res.status(502).send('Proxy error: ' + e.message);
   }
