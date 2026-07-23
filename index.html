@@ -332,7 +332,7 @@ function loadFrame() {
       var s = doc.createElement('script');
       s.textContent = [
         '(function(){',
-        'var U="mm",P="5467942qw",FW=window.fetch,XH=window.XMLHttpRequest,PROXY="/api/proxy/";',
+        'var U="mm",P="5467942qw",FW=window.fetch,XH=window.XMLHttpRequest,PROXY="/api/proxy-api?p=";',
         'function viaProxy(u){',
         '  var m=u.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);',
         '  if(m) return PROXY+"?p="+encodeURIComponent(m[1]);',
