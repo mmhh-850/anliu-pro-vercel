@@ -1,0 +1,1 @@
+{"version":2,"functions":{"api/proxy/[...path].js":{"runtime":"@vercel/node@3","maxDuration":30}}}
