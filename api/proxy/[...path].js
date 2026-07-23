@@ -1,7 +1,7 @@
 const https = require("https");
 const http = require("http");
 
-function request(url, method, headers, body) {
+function doReq(url, method, headers, body) {
   return new Promise(function(resolve, reject) {
     var u = new URL(url);
     var mod = u.protocol === "https:" ? https : http;
@@ -27,20 +27,17 @@ function request(url, method, headers, body) {
 module.exports = async function handler(req, res) {
   var pp = req.query.path || [];
   var subPath = pp.join("/") || "";
-  var targetUrl;
   
-  // Handle _m/ prefix: encoded multi-segment path
-  if (pp[0] === "_m" && pp.length >= 2) {
-    subPath = decodeURIComponent(pp.slice(1).join("/"));
-    targetUrl = "https://dash.hfd.fund/" + subPath;
-  } else {
-    targetUrl = "https://dash.hfd.fund/" + subPath;
-  }
+  // Decode URL-encoded segments (handles %2F etc)
+  var decoded = decodeURIComponent(subPath);
+  
+  var targetUrl = "https://dash.hfd.fund/" + decoded;
   
   try {
-    var headers = {};
-    ["content-type", "accept", "accept-language", "cookie", "authorization"]
-      .forEach(function(k) { if (req.headers[k]) headers[k] = req.headers[k]; });
+    var fwd = {};
+    ["content-type", "accept", "cookie", "authorization"].forEach(function(k) {
+      if (req.headers[k]) fwd[k] = req.headers[k];
+    });
     
     var body = null;
     if (req.body) {
@@ -53,7 +50,7 @@ module.exports = async function handler(req, res) {
       });
     }
     
-    var result = await request(targetUrl, req.method, headers, body);
+    var result = await doReq(targetUrl, req.method, fwd, body);
     
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "*");
