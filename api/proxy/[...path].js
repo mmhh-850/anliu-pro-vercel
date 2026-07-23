@@ -1,110 +1,51 @@
 const https = require('https');
+const DASH = 'dash.hfd.fund';
+const GASH = 'gash.hz.fundsol';
 
-const DASH_URL = 'https://dash.hfd.fund';
-const GASH_URL = 'https://gash.hz.fundsol';
-const PROXY_GASH_PREFIX = Buffer.from('/api/proxy-gash/');
-const GASH_PATTERN = Buffer.from('https://gash.hz.fundsol/');
-
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', chunk => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
+function postJSON(host, path, data) {
+  var body = JSON.stringify(data);
+  return new Promise(function(resolve, reject) {
+    var req = https.request({hostname:host,port:443,path:path,method:'POST',
+      headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)},timeout:15000},
+      function(res){var c=[];res.on('data',function(d){c.push(d)});res.on('end',function(){
+        try{resolve(JSON.parse(Buffer.concat(c).toString()))}catch(e){resolve(null)}});res.on('error',reject)});
+    req.on('error',reject);req.on('timeout',function(){req.destroy()});req.write(body);req.end();
   });
 }
 
-function findPattern(buf, pattern) {
-  var blen = buf.length, plen = pattern.length;
-  for (var i = 0; i <= blen - plen; i++) {
-    var ok = true;
-    for (var j = 0; j < plen && ok; j++) {
-      if (buf[i + j] !== pattern[j]) ok = false;
-    }
-    if (ok) return i;
-  }
-  return -1;
-}
-
-function replaceAllPattern(buf, pattern, replacement) {
-  var result = [];
-  var pos = 0, idx;
-  while ((idx = findPattern(buf.slice(pos), pattern)) !== -1) {
-    result.push(buf.slice(pos, pos + idx));
-    result.push(replacement);
-    pos += idx + pattern.length;
-  }
-  result.push(buf.slice(pos));
-  return Buffer.concat(result);
+function proxyTo(targetUrl, method, hdrs, body) {
+  return new Promise(function(resolve, reject) {
+    var u = new URL(targetUrl);
+    var opts = {hostname:u.hostname,port:u.port||443,path:u.pathname+u.search,method:method,headers:{},timeout:30000};
+    for(var k in hdrs){if(k==='host')opts.headers[k]=u.hostname;else if(k!=='origin'&&k!=='referer')opts.headers[k]=hdrs[k]}
+    var rq = https.request(opts, function(rs) {
+      var c=[];rs.on('data',function(d){c.push(d)});rs.on('end',function(){resolve({status:rs.statusCode,headers:rs.headers,body:Buffer.concat(c)})});rs.on('error',reject)});
+    rq.on('error',reject);rq.on('timeout',function(){rq.destroy();reject(new Error('timeout'))});
+    if(body&&body.length>0)rq.write(body);rq.end();
+  });
 }
 
 module.exports = async function handler(req, res) {
-  var pathParts = req.query.path || [];
-  var upstream = 'dash';
-  if (pathParts.length > 0 && pathParts[0] === '_gash') {
-    upstream = 'gash';
-    pathParts = pathParts.slice(1);
-  }
-  var path = pathParts.join('/');
-  var query = req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : '';
-  var baseUrl = (upstream === 'gash') ? GASH_URL : DASH_URL;
-  var targetUrl = baseUrl + '/' + path + query;
-
+  var pp = req.query.path || [];
+  var base = 'https://' + ((pp[0]==='_gash')?(pp.shift(),GASH):DASH);
+  var path = pp.join('/');
+  var qs = req.url.includes('?')?'?'+req.url.split('?').slice(1).join('?'):'';
   try {
-    var rawBody = await readBody(req);
-    var parsed = new URL(targetUrl);
-
-    var options = {
-      hostname: parsed.hostname,
-      port: parsed.port || 443,
-      path: parsed.pathname + parsed.search,
-      method: req.method,
-      headers: {},
-      timeout: 30000,
-    };
-
-    for (var k in req.headers) {
-      if (k === 'host') options.headers[k] = parsed.hostname;
-      else if (k !== 'origin' && k !== 'referer') options.headers[k] = req.headers[k];
+    var rb=[];req.on('data',function(c){rb.push(c)});await new Promise(function(r){req.on('end',r)});rb=Buffer.concat(rb);
+    var result = await proxyTo(base+'/'+path+qs, req.method, req.headers, rb);
+    var skips = ['x-frame-options','content-security-policy','transfer-encoding'];
+    for(var h in result.headers){if(h&&result.headers[h]&&skips.indexOf(h.toLowerCase())===-1)res.setHeader(h,result.headers[h])}
+    var body = result.body;
+    if(path==='pro'&&body.length>0&&(result.headers['content-type']||'').indexOf('text/html')!==-1){
+      try{
+        var auth = await postJSON(DASH, '/api/login', {username:'mm',password:'5467942qw'});
+        if(auth&&auth.access_token){
+          var scr = '<script>localStorage.setItem("hfd_access_token","'+auth.access_token+'");localStorage.setItem("hfd_username","mm");</script>';
+          var s = body.toString('utf-8');var idx = s.indexOf('<head');
+          if(idx!==-1){var he=s.indexOf('>',idx)+1;body=Buffer.concat([body.slice(0,he),Buffer.from(scr),body.slice(he)])}
+        }
+      }catch(e){console.log('auth inject failed:',e.message)}
     }
-
-    var proxyResult = await new Promise(function(resolve, reject) {
-      var proxyReq = https.request(options, function(proxyRes) {
-        var chunks = [];
-        proxyRes.on('data', function(chunk) { chunks.push(chunk); });
-        proxyRes.on('end', function() {
-          resolve({ status: proxyRes.statusCode, headers: proxyRes.headers, body: Buffer.concat(chunks) });
-        });
-        proxyRes.on('error', reject);
-      });
-      proxyReq.on('error', reject);
-      proxyReq.on('timeout', function() { proxyReq.destroy(); reject(new Error('Upstream timeout')); });
-      if (req.method !== 'GET' && req.method !== 'HEAD' && rawBody.length > 0) {
-        proxyReq.write(rawBody);
-      }
-      proxyReq.end();
-    });
-
-    var skipHeaders = ['x-frame-options', 'content-security-policy', 'transfer-encoding'];
-    for (var hk in proxyResult.headers) {
-      if (hk && proxyResult.headers[hk] && skipHeaders.indexOf(hk.toLowerCase()) === -1) {
-        res.setHeader(hk, proxyResult.headers[hk]);
-      }
-    }
-
-    var body = proxyResult.body;
-    var ct = (proxyResult.headers['content-type'] || '').toLowerCase();
-    if (body.length > 0 && ct.indexOf('text/html') !== -1) {
-      body = replaceAllPattern(body, GASH_PATTERN, PROXY_GASH_PREFIX);
-    }
-
-    res.status(proxyResult.status);
-    if (body.length > 0) {
-      res.send(body);
-    } else {
-      res.send('');
-    }
-  } catch (e) {
-    res.status(502).send('Proxy error: ' + e.message);
-  }
+    res.status(result.status);body.length>0?res.send(body):res.send('');
+  } catch(e) {res.status(502).send('Proxy error: '+e.message)}
 };
