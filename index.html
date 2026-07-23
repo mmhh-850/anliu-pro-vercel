@@ -321,7 +321,7 @@ function loadFrame() {
   iframe.style.display = 'block';
   
   // Step 1: Get auth token via proxy
-  fetch('/api/auth-proxy/pro', {
+  fetch('/api/proxy-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'mm',password:'5467942qw'})}).then(r=>r.json()).then(d=>{localStorage.setItem('hfd_token',d.access_token||d.token||'');return fetch('/api/proxy/pro')}).then(r=>r.text()), {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({username:'mm',password:'5467942qw'})
