@@ -25,12 +25,17 @@ function request(url, method, headers, body) {
 }
 
 module.exports = async function handler(req, res) {
-  // Support both: /api/proxy/pro and /api/proxy?p=api/login
   var pp = req.query.path || [];
-  var subPath = pp.join("/");
-  if (!subPath) subPath = req.query.p || "";
+  var subPath = pp.join("/") || "";
+  var targetUrl;
   
-  var targetUrl = "https://dash.hfd.fund/" + subPath;
+  // Handle _m/ prefix: encoded multi-segment path
+  if (pp[0] === "_m" && pp.length >= 2) {
+    subPath = decodeURIComponent(pp.slice(1).join("/"));
+    targetUrl = "https://dash.hfd.fund/" + subPath;
+  } else {
+    targetUrl = "https://dash.hfd.fund/" + subPath;
+  }
   
   try {
     var headers = {};
