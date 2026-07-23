@@ -24,35 +24,28 @@ function request(url, method, headers, body) {
   });
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   var pp = req.query.path || [];
   var subPath = pp.join("/") || "";
   var targetUrl = "https://dash.hfd.fund/" + subPath;
   
   try {
     var headers = {};
-    // Forward relevant headers
     ["content-type", "accept", "accept-encoding", "accept-language", "cookie", "authorization"]
       .forEach(function(k) { if (req.headers[k]) headers[k] = req.headers[k]; });
     
     var body = null;
-    if (req.method !== "GET" && req.method !== "HEAD") {
-      var chunks = [];
-      await new Promise(function(rr) {
-        req.on("data", function(c) { chunks.push(c); });
-        req.on("end", rr);
-      });
-      body = Buffer.concat(chunks);
+    if (req.body) {
+      body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+      headers["content-type"] = headers["content-type"] || "application/json";
     }
     
     var result = await request(targetUrl, req.method, headers, body);
     
-    // Set CORS headers
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "*");
     res.setHeader("Access-Control-Allow-Headers", "*");
     
-    // Copy response headers
     var skip = ["content-encoding", "transfer-encoding", "content-length"];
     Object.keys(result.headers).forEach(function(k) {
       if (skip.indexOf(k.toLowerCase()) < 0) {
@@ -64,4 +57,4 @@ module.exports = async function handler(req, res) {
   } catch(e) {
     res.status(502).send("Proxy error: " + e.message);
   }
-};
+}
