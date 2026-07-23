@@ -319,28 +319,21 @@ async function onLogin() {
 function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
-  
-  // Step 1: Get auth token via proxy
-  fetch('/api/proxy-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'mm',password:'5467942qw'})}).then(r=>r.json()).then(d=>{localStorage.setItem('hfd_token',d.access_token||d.token||'');return fetch('/api/proxy/pro')}).then(r=>r.text()), {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username:'mm',password:'5467942qw'})
-  }).then(function(r) { return r.json(); })
-  .then(function(auth) {
-    if (!auth.access_token) throw new Error('no token');
-    // Step 2: Fetch HTML via proxy
-    return fetch(PROXY_BASE + '/pro').then(function(r) { return r.text(); })
-      .then(function(html) {
-        // Step 3: Inject base tag + JWT token before any script runs
-        var inject = '<base href="https://dash.hfd.fund/">\n<scr' + 'ipt>localStorage.setItem("hfd_access_token","' + auth.access_token + '");localStorage.setItem("hfd_username","mm");</scr' + 'ipt>';
-        html = html.replace(/<head[^>]*>/i, '$&' + inject);
-        iframe.srcdoc = html;
-      });
-  }).catch(function(e) {
-    console.error('Auth/load failed:', e);
-    // Fallback: direct proxy load
-    iframe.src = PROXY_BASE + '/pro';
-  });
+  iframe.src = PROXY_BASE + '/pro';
+  iframe.onload = function() {
+    try {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (!doc) return;
+      if (!doc.querySelector('base')) {
+        var base = doc.createElement('base');
+        base.href = 'https://dash.hfd.fund/';
+        doc.head.insertBefore(base, doc.head.firstChild);
+      }
+      var s = doc.createElement('script');
+      s.textContent = '(function(){if(localStorage.getItem("hfd_authed"))return;var u="mm",p="5467942qw";fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})}).then(function(r){return r.json()}).then(function(d){var tk=d.access_token||d.token||"";if(tk){localStorage.setItem("hfd_authed","1");localStorage.setItem("hfd_access_token",tk);localStorage.setItem("hfd_username",u);}location.reload();}).catch(function(){})})();';
+      doc.head.appendChild(s);
+    } catch(e) { console.log('e:', e); }
+  };
 }
 async function logout() {
   if (!sbReady()) return;
