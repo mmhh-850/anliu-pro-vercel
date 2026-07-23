@@ -1,4 +1,5 @@
 const https = require("https");
+const http = require("http");
 
 const INJECT = `
 <script><!-- M -->
@@ -16,37 +17,49 @@ location.reload();
 <\/script>
 `;
 
+function forward(req, res) {
+  // Full path passthrough: /api/proxy/whatever -> https://dash.hfd.fund/api/proxy/whatever
+  var upstreamPath = req.url || "/";
+  
+  var body = "";
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return new Promise(function(resolve) {
+      var chunks=[];
+      req.on("data",c=>chunks.push(c));
+      req.on("end",()=>{ body=Buffer.concat(chunks).toString(); resolve(); });
+    });
+  }
+  return Promise.resolve();
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "*");
   res.setHeader("Access-Control-Allow-Headers", "*");
   if (req.method === "OPTIONS") { return res.status(200).send(""); }
   
-  var pp = req.query.path || [];
-  var subPath = decodeURIComponent(pp.join("/") || "");
-  var targetUrl = "https://dash.hfd.fund/" + subPath;
-  
   try {
-    var hdrs = {};
-    ["content-type","accept","authorization","cookie"].forEach(function(k){
-      if(req.headers[k]) hdrs[k]=req.headers[k];
-    });
-    
-    var body = null;
-    if (req.body) { body = typeof req.body === "string" ? req.body : JSON.stringify(req.body); }
-    else if (req.method !== "GET" && req.method !== "HEAD") {
+    var body = "";
+    if (req.method !== "GET" && req.method !== "HEAD") {
       body = await new Promise(function(resolve){
         var chunks=[];
         req.on("data",c=>chunks.push(c));
         req.on("end",()=>resolve(Buffer.concat(chunks).toString()));
       });
     }
-
+    
+    var targetUrl = "https://dash.hfd.fund" + (req.url || "/");
     var u = new URL(targetUrl);
-    var opts = { hostname: u.hostname, port: 443, path: u.pathname+u.search,
-      method: req.method, headers: hdrs, rejectUnauthorized: false, timeout: 30000 };
+    var protocol = u.protocol === "https:" ? https : http;
+    
+    var hdrs = {};
+    ["content-type","accept","authorization","cookie"].forEach(function(k){
+      if(req.headers[k]) hdrs[k]=req.headers[k];
+    });
     
     var result = await new Promise(function(resolve,reject){
+      var opts = { hostname: u.hostname, port: u.port || 443, path: u.pathname+u.search,
+        method: req.method, headers: hdrs, rejectUnauthorized: false, timeout: 30000 };
       var r = https.request(opts,function(rr){
         var chunks=[];
         rr.on("data",c=>chunks.push(c));
