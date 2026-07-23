@@ -319,53 +319,29 @@ async function onLogin() {
 function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
-  // Use proxy to bypass X-Frame-Options and maintain origin
-  iframe.src = PROXY_BASE + '/pro';
-  iframe.onload = function() {
-    try {
-      var doc = iframe.contentDocument || iframe.contentWindow.document;
-      if (!doc) return;
-      
-      // Inject base tag for asset resolution
-      if (!doc.querySelector('base')) {
-        var base = doc.createElement('base');
-        base.href = 'https://dash.hfd.fund/';
-        doc.head.insertBefore(base, doc.head.firstChild);
-      }
-      
-      // Dismiss any login overlay/modal after page renders
-      setTimeout(function() {
-        try {
-          // Remove modal overlays containing login text
-          var allDivs = doc.querySelectorAll('div');
-          for (var i = 0; i < allDivs.length; i++) {
-            var d = allDivs[i];
-            var txt = d.textContent || '';
-            var cls = (d.className || '').toString();
-            var st = (d.getAttribute('style') || '').toString();
-            if ((txt.indexOf('登录') !== -1 || txt.indexOf('login') !== -1) &&
-                (cls.indexOf('modal') !== -1 || cls.indexOf('overlay') !== -1 || cls.indexOf('dialog') !== -1 || cls.indexOf('mask') !== -1 ||
-                 st.indexOf('fixed') !== -1 || st.indexOf('absolute') !== -1)) {
-              d.style.display = 'none';
-            }
-          }
-          // Remove body mask/blur
-          doc.body.style.overflow = 'auto';
-          doc.body.style.filter = 'none';
-          var masks = doc.querySelectorAll('[class*="mask"], [class*="overlay"], [class*="backdrop"]');
-          for (var j = 0; j < masks.length; j++) {
-            masks[j].style.display = 'none';
-          }
-        } catch(e2) {
-          console.log('Dismiss failed:', e2);
-        }
-      }, 2000);
-    } catch(e) {
-      console.log('Iframe inject failed:', e);
-    }
-  };
+  
+  // Step 1: Get auth token via proxy
+  fetch('/api/proxy-login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username:'mm',password:'5467942qw'})
+  }).then(function(r) { return r.json(); })
+  .then(function(auth) {
+    if (!auth.access_token) throw new Error('no token');
+    // Step 2: Fetch HTML via proxy
+    return fetch(PROXY_BASE + '/pro').then(function(r) { return r.text(); })
+      .then(function(html) {
+        // Step 3: Inject base tag + JWT token before any script runs
+        var inject = '<base href="https://dash.hfd.fund/">\n<scr' + 'ipt>localStorage.setItem("hfd_access_token","' + auth.access_token + '");localStorage.setItem("hfd_username","mm");</scr' + 'ipt>';
+        html = html.replace(/<head[^>]*>/i, '$&' + inject);
+        iframe.srcdoc = html;
+      });
+  }).catch(function(e) {
+    console.error('Auth/load failed:', e);
+    // Fallback: direct proxy load
+    iframe.src = PROXY_BASE + '/pro';
+  });
 }
-
 async function logout() {
   if (!sbReady()) return;
   try {
