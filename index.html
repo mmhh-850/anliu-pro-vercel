@@ -320,17 +320,20 @@ function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
   
-  // Fetch HTML via proxy
   fetch(PROXY_BASE + '/pro').then(function(r) { return r.text(); }).then(function(html) {
-    // Inject interceptor BEFORE any page scripts run
     var inject = '<base href="https://dash.hfd.fund/"><script>' +
       '(function(){' +
       'var FW=window.fetch,XH=window.XMLHttpRequest,P="/api/proxy-api?p=";' +
-      'function via(u){var m=u.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);return m?P+encodeURIComponent(m[1]):u;}' +
-      'window.fetch=function(u,o){return FW(via(typeof u=="string"?u:u.url||u.toString()),o||{});};' +
+      'function via(u){' +
+        'var s=typeof u=="string"?u:(u.url||u.toString());' +
+        'var m=s.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);' +
+        'if(m)return P+encodeURIComponent(m[1]);' +
+        'if(s.startsWith("/"))return P+encodeURIComponent(s.slice(1));' +
+        'return s;' +
+      '}' +
+      'window.fetch=function(u,o){return FW(via(u),o||{});};' +
       'var O=XH.prototype.open;' +
       'XH.prototype.open=function(m,u){arguments[1]=via(u);return O.apply(this,arguments);};' +
-      // Auto-login: call login API via proxy, store token, then reload srcdoc
       'if(!localStorage.getItem("hfd_authed")){' +
         'FW("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"mm",password:"5467942qw"})})' +
         '.then(function(r){return r.json()}).then(function(d){' +
