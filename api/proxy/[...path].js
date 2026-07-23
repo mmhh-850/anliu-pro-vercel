@@ -1,6 +1,33 @@
 const https = require("https");
 const http = require("http");
 
+const INJECT_SCRIPT = `
+<script><!-- Marvis Inject -->
+(function(){
+  var FW=window.fetch,XH=window.XMLHttpRequest,B=location.origin;
+  function via(u){
+    var s=typeof u=="string"?u:(u.url||u.toString());
+    var m=s.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.*)/);
+    if(m)s=m[1];
+    else if(s.startsWith("/"))s=s.slice(1);
+    if(s.startsWith("api/proxy-api"))return u;
+    return B+"/api/proxy-api?p="+encodeURIComponent(s);
+  }
+  window.fetch=function(u,o){return FW(via(u),o||{});};
+  var O=XH.prototype.open;
+  XH.prototype.open=function(m,u){arguments[1]=via(u);return O.apply(this,arguments);};
+  if(!localStorage.getItem("hfd_authed")){
+    FW(B+"/api/proxy-api?p=api%2Flogin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"mm",password:"5467942qw"})})
+    .then(function(r){return r.json()}).then(function(d){
+      var t=d.access_token||d.token||"";
+      if(t){localStorage.setItem("hfd_authed","1");localStorage.setItem("hfd_access_token",t);localStorage.setItem("hfd_username","mm");}
+      location.reload();
+    }).catch(function(){});
+  }
+})();
+</script>
+`;
+
 function doReq(url, method, headers, body) {
   return new Promise(function(resolve, reject) {
     var u = new URL(url);
@@ -24,14 +51,16 @@ function doReq(url, method, headers, body) {
   });
 }
 
+function isHtml(ct) {
+  if (!ct) return false;
+  return ct.indexOf("text/html") >= 0 || ct.indexOf("application/xhtml") >= 0;
+}
+
 module.exports = async function handler(req, res) {
   var pp = req.query.path || [];
-  var subPath = pp.join("/") || "";
+  var subPath = decodeURIComponent(pp.join("/") || "");
   
-  // Decode URL-encoded segments (handles %2F etc)
-  var decoded = decodeURIComponent(subPath);
-  
-  var targetUrl = "https://dash.hfd.fund/" + decoded;
+  var targetUrl = "https://dash.hfd.fund/" + subPath;
   
   try {
     var fwd = {};
@@ -63,7 +92,16 @@ module.exports = async function handler(req, res) {
       }
     });
     
-    res.status(result.status).send(result.body);
+    // Inject interceptor into HTML responses
+    var ct = result.headers["content-type"] || "";
+    var respBody = result.body;
+    if (isHtml(ct) && Buffer.isBuffer(respBody)) {
+      var html = respBody.toString("utf-8");
+      html = html.replace("<head>", "<head>" + INJECT_SCRIPT);
+      respBody = Buffer.from(html, "utf-8");
+    }
+    
+    res.status(result.status).send(respBody);
   } catch(e) {
     res.status(502).send("Proxy error: " + e.message);
   }
