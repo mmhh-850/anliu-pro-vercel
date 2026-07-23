@@ -25,16 +25,18 @@ function request(url, method, headers, body) {
 }
 
 module.exports = async function handler(req, res) {
+  // Support both: /api/proxy/pro and /api/proxy?p=api/login
   var pp = req.query.path || [];
-  var subPath = pp.join("/") || "";
+  var subPath = pp.join("/");
+  if (!subPath) subPath = req.query.p || "";
+  
   var targetUrl = "https://dash.hfd.fund/" + subPath;
   
   try {
     var headers = {};
-    ["content-type", "accept", "accept-encoding", "accept-language", "cookie", "authorization"]
+    ["content-type", "accept", "accept-language", "cookie", "authorization"]
       .forEach(function(k) { if (req.headers[k]) headers[k] = req.headers[k]; });
     
-    // Read body: try req.body first (Next.js auto-parses JSON), fallback to stream
     var body = null;
     if (req.body) {
       body = JSON.stringify(req.body);
