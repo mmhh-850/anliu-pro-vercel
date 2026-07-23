@@ -3,374 +3,84 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>暗流Pro - 专业数字货币链上数据分析平台</title>
+<title>暗流Pro</title>
 <style>
-:root {
-  --bg-primary: #0a0e17;
-  --bg-card: #111827;
-  --bg-card-hover: #1a2332;
-  --bg-input: #0d1117;
-  --border: #1e293b;
-  --border-active: #22c55e;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent: #22c55e;
-  --accent-hover: #16a34a;
-  --accent-glow: rgba(34,197,94,0.15);
-  --blue: #3b82f6;
-  --red: #ef4444;
-  --gold: #f59e0b;
-  --purple: #8b5cf6;
-  --radius: 10px;
-  --radius-sm: 6px;
-  --transition: 0.2s ease;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg-primary); color: var(--text-primary); -webkit-font-smoothing: antialiased; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-/* ---- Layout ---- */
-.container { display: flex; flex-direction: column; height: 100%; min-height: 100vh; }
-
-/* ---- Header ---- */
-.header { background: rgba(17,24,39,0.95); border-bottom: 1px solid var(--border); padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(12px); position: relative; z-index: 100; }
-.header-left { display: flex; align-items: center; gap: 14px; }
-.logo { display: flex; align-items: center; gap: 10px; }
-.logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #059669); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #fff; }
-.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
-.logo-text span { color: var(--accent); }
-.badge-pro { font-size: 10px; background: var(--accent); color: #000; padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-left: 4px; }
-.header-right { display: flex; align-items: center; gap: 10px; }
-#userEmail { font-size: 13px; color: var(--text-secondary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.plan-badge { background: rgba(34,197,94,0.15); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid rgba(34,197,94,0.3); }
-
-/* ---- Buttons ---- */
-.btn { padding: 7px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); cursor: pointer; font-size: 13px; font-weight: 500; transition: all var(--transition); white-space: nowrap; }
-.btn:hover { background: #1e293b; border-color: #334155; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
-.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); box-shadow: 0 0 20px var(--accent-glow); }
-.btn-outline { background: transparent; border-color: var(--accent); color: var(--accent); }
-.btn-outline:hover { background: rgba(34,197,94,0.1); }
-.btn-ghost { background: transparent; border-color: transparent; color: var(--text-secondary); }
-.btn-ghost:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
-.btn-sm { padding: 5px 12px; font-size: 12px; }
-
-/* ---- Landing Page ---- */
-.landing { flex: 1; overflow-y: auto; }
-.hero { padding: 60px 28px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
-.hero h1 { font-size: 36px; font-weight: 800; line-height: 1.3; margin-bottom: 12px; letter-spacing: -1px; }
-.hero h1 .hl { background: linear-gradient(135deg, var(--accent), #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.hero p { font-size: 16px; color: var(--text-secondary); max-width: 560px; margin: 0 auto 28px; line-height: 1.7; }
-.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.pulse-dot { display: inline-block; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; vertical-align: middle; }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
-
-/* ---- Dashboard Preview ---- */
-.preview-section { padding: 0 28px 40px; max-width: 1200px; margin: 0 auto; }
-.preview-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.preview-header { padding: 12px 20px; background: #0f172a; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.preview-header .dots { display: flex; gap: 6px; }
-.preview-header .dots span { width: 10px; height: 10px; border-radius: 50%; }
-.preview-header .dots span:nth-child(1) { background: #ef4444; }
-.preview-header .dots span:nth-child(2) { background: #f59e0b; }
-.preview-header .dots span:nth-child(3) { background: #22c55e; }
-.preview-body { padding: 16px 20px; }
-.mock-data { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-.mock-indicator { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; }
-.mock-indicator .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-.mock-indicator .value { font-size: 22px; font-weight: 700; }
-.mock-indicator .value.up { color: var(--accent); }
-.mock-indicator .value.down { color: var(--red); }
-.mock-indicator .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-/* ---- Feature Cards ---- */
-.features-section { padding: 0 28px 50px; max-width: 1200px; margin: 0 auto; }
-.features-section h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; text-align: center; }
-.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-.feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 20px; transition: all var(--transition); }
-.feature-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(34,197,94,0.08); }
-.feature-card .icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
-.feature-card .icon.green { background: rgba(34,197,94,0.12); color: var(--accent); }
-.feature-card .icon.blue { background: rgba(59,130,246,0.12); color: var(--blue); }
-.feature-card .icon.purple { background: rgba(139,92,246,0.12); color: var(--purple); }
-.feature-card .icon.gold { background: rgba(245,158,11,0.12); color: var(--gold); }
-.feature-card .icon.red { background: rgba(239,68,68,0.12); color: var(--red); }
-.feature-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-.feature-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-
-/* ---- Pricing ---- */
-.pricing-section { padding: 0 28px 60px; max-width: 900px; margin: 0 auto; }
-.pricing-section h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; text-align: center; }
-.pricing-sub { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; }
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; justify-content: center; }
-.pricing-card { background: var(--bg-card); border: 2px solid var(--border); border-radius: var(--radius); padding: 28px 24px; text-align: center; transition: all var(--transition); position: relative; }
-.pricing-card:hover { border-color: #334155; }
-.pricing-card.recommended { border-color: var(--accent); box-shadow: 0 0 30px var(--accent-glow); }
-.pricing-card.recommended::before { content: '推荐'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-size: 11px; font-weight: 700; padding: 3px 14px; border-radius: 10px; }
-.pricing-card .plan-name { font-size: 14px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; }
-.pricing-card .price { font-size: 36px; font-weight: 800; margin: 10px 0; }
-.pricing-card .price small { font-size: 14px; color: var(--text-muted); font-weight: 400; }
-.pricing-card .duration { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
-.pricing-card .features { list-style: none; margin-bottom: 20px; }
-.pricing-card .features li { font-size: 13px; color: var(--text-secondary); padding: 5px 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
-.pricing-card .features li::before { content: '\2713'; color: var(--accent); font-weight: bold; }
-
-/* ---- Trust Bar ---- */
-.trust-bar { padding: 20px 28px; text-align: center; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
-.trust-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
-
-/* ---- Footer ---- */
-.footer { padding: 20px 28px; text-align: center; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
-
-/* ---- Login Prompt (inside iframe area, when not logged in) ---- */
-#loginPrompt { display: none; }
-
-/* ---- Iframe Area ---- */
-.iframe-wrapper { flex: 1; position: relative; display: none; }
-.iframe-wrapper iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; }
-
-/* ---- Modal ---- */
-.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-.modal-overlay.active { display: flex; }
-.modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 420px; max-width: 92vw; animation: fadeIn 0.2s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-.modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.modal .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
-.modal input, .modal select { width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 14px; margin-bottom: 10px; transition: border-color var(--transition); }
-.modal input:focus, .modal select:focus { outline: none; border-color: var(--accent); }
-.modal select { cursor: pointer; }
-.modal .btn { width: 100%; margin-top: 4px; padding: 11px; }
-.modal .tip { font-size: 12px; color: var(--text-muted); margin-top: 14px; text-align: center; }
-.modal .tip a { color: var(--accent); cursor: pointer; text-decoration: none; font-weight: 500; }
-.modal .tip a:hover { text-decoration: underline; }
-
-/* ---- Tabs ---- */
-.tab-nav { display: flex; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
-.tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 14px; font-weight: 500; border-bottom: 2px solid transparent; transition: all var(--transition); }
-.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-
-/* ---- Payment Modal ---- */
-.plan-cards { display: flex; gap: 10px; margin-bottom: 18px; }
-.plan-card { flex: 1; border: 2px solid var(--border); border-radius: var(--radius); padding: 16px 12px; text-align: center; cursor: pointer; transition: all var(--transition); background: rgba(255,255,255,0.01); }
-.plan-card.active { border-color: var(--accent); background: rgba(34,197,94,0.05); box-shadow: 0 0 20px var(--accent-glow); }
-.plan-card .price-text { font-size: 22px; font-weight: 800; }
-.plan-card .label-text { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.plan-card .save-text { font-size: 11px; color: var(--accent); margin-top: 4px; font-weight: 600; }
-
-.pay-methods { display: flex; gap: 10px; margin-bottom: 16px; }
-.pay-method { flex: 1; }
-.pay-method input { display: none; }
-.pay-method label { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; font-weight: 500; transition: all var(--transition); }
-.pay-method input:checked + label { border-color: var(--accent); background: rgba(34,197,94,0.05); color: var(--accent); }
-
-.qr-container { text-align: center; margin: 16px 0; padding: 20px; background: #fff; border-radius: var(--radius); min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.qr-container.loading { background: var(--bg-input); }
-.qr-container img { max-width: 200px; max-height: 200px; }
-.qr-container .qr-hint { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
-
-.qr-error { display: none; text-align: center; padding: 16px; color: var(--red); font-size: 13px; background: rgba(239,68,68,0.08); border-radius: var(--radius-sm); margin: 12px 0; }
-
-.status-msg { text-align: center; padding: 20px; border-radius: var(--radius-sm); margin: 12px 0; display: none; }
-.status-msg.success { display: block; background: rgba(34,197,94,0.08); color: var(--accent); border: 1px solid rgba(34,197,94,0.2); }
-.status-msg.info { display: block; background: rgba(59,130,246,0.08); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
-
-/* ---- Banner ---- */
-.banner { background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(59,130,246,0.06)); padding: 10px 20px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--border); display: none; }
-.banner .pulse { display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 6px; animation: pulse 1.5s infinite; vertical-align: middle; }
-.banner a { color: var(--accent); cursor: pointer; font-weight: 600; }
-
-/* ---- Loading Spinner ---- */
-.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ---- Responsive ---- */
-@media (max-width: 640px) {
-  .hero h1 { font-size: 26px; }
-  .hero p { font-size: 14px; }
-  .features-grid { grid-template-columns: 1fr; }
-  .plan-cards { flex-direction: column; }
-  .header { padding: 0 16px; }
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+  .container { display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: #161b22; border-bottom: 1px solid #30363d; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .topbar h1 { font-size: 18px; color: #58a6ff; }
+  .user-area { display: flex; align-items: center; gap: 12px; }
+  .btn { padding: 6px 16px; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 13px; }
+  .btn:hover { background: #30363d; }
+  .btn-primary { background: #238636; border-color: #2ea043; color: #fff; }
+  .btn-primary:hover { background: #2ea043; }
+  .price-tag { background: #1f6feb; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; width: 380px; }
+  .modal h2 { font-size: 20px; margin-bottom: 16px; color: #f0f6fc; }
+  .modal input { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; }
+  .modal select { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; cursor: pointer; }
+  .modal .btn { width: 100%; margin-top: 8px; }
+  .modal .tip { font-size: 12px; color: #8b949e; margin-top: 12px; text-align: center; }
+  .iframe-wrapper { flex: 1; position: relative; }
+  .iframe-wrapper iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; }
+  .login-prompt { text-align: center; padding: 80px 20px; }
+  .login-prompt h2 { font-size: 24px; margin-bottom: 12px; }
+  .login-prompt p { color: #8b949e; margin-bottom: 24px; }
+  .banner { background: linear-gradient(135deg, #1f6feb, #238636); padding: 12px 20px; text-align: center; font-size: 14px; color: #fff; }
+  .banner a { color: #ffd666; text-decoration: underline; cursor: pointer; }
+  .expire-warn { color: #f85149; font-size: 12px; margin-left: 8px; }
+  .tab-nav { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 16px; }
+  .tab-btn { flex: 1; padding: 8px 16px; border: none; background: transparent; color: #8b949e; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .modal .tip a { color: #58a6ff; cursor: pointer; text-decoration: none; }
+  .modal .tip a:hover { text-decoration: underline; }
+  .plan-box { border:1px solid #30363d; border-radius:8px; padding:16px; margin-bottom:12px; background:#0d1117; }
+  .plan-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .plan-name { font-size:16px; font-weight:bold; color:#f0f6fc; }
+  .plan-price { font-size:22px; font-weight:bold; color:#ffd666; }
+  .plan-desc { color:#8b949e; font-size:13px; margin-bottom:12px; }
+  .btn-pay { display:inline-block; padding:8px 16px; border-radius:6px; font-size:13px; margin-right:8px; cursor:pointer; border:none; }
+  .btn-pay.wechat { background:#2da44e; color:#fff; }
+  .btn-pay.alipay { background:#0969da; color:#fff; }
+  .btn-cancel { display:block; width:100%; padding:10px; margin-top:12px; background:#21262d; color:#c9d1d9; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
+  .step-indicator { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; font-size:13px; }
+  .step { color:#484f58; padding:4px 10px; border-radius:12px; background:#21262d; }
+  .step.active { color:#58a6ff; background:#1f3a5f; }
+  .step-arrow { color:#30363d; }
+  .step.done { color:#3fb950; }
 </style>
 </head>
 <body>
 <div class="container">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="logo">
-        <div class="logo-icon">暗</div>
-        <div class="logo-text">暗流<span>Pro</span><span class="badge-pro">PRO</span></div>
-      </div>
-    </div>
-    <div class="header-right" id="userArea">
-      <span id="userEmail"></span>
-      <span id="planBadge" class="plan-badge" style="display:none;">Pro会员</span>
-      <button class="btn btn-primary" id="btnUpgrade" onclick="showPayModal()"><span class="pulse-dot"></span>升级会员 ￥9.9起</button>
-      <button class="btn btn-outline" id="btnLogin" onclick="showLoginModal()">登录</button>
-      <button class="btn btn-ghost" id="btnLogout" onclick="logout()" style="display:none;">退出</button>
+  <div class="topbar">
+    <h1>暗流Pro</h1>
+    <div class="user-area" id="userArea">
+      <span id="userEmail" style="font-size:13px;color:#8b949e;"></span>
+      <span id="planBadge" class="price-tag" style="display:none;">Pro</span>
+      <button class="btn btn-primary" id="btnUpgrade" onclick="showPayModal()">订阅服务</button>
+      <button class="btn" id="btnLogin" onclick="showLoginModal()">登录</button>
+      <button class="btn" id="btnLogout" onclick="logout()" style="display:none;">退出</button>
     </div>
   </div>
-
-  <!-- Banner (logged in, no subscription) -->
-  <div class="banner" id="banner">
-    <span class="pulse"></span>解锁全部 33 个币种实时数据 · 链上净流入追踪 · 机构订单块 · <a onclick="showPayModal()">立即订阅 ￥9.9/月</a>
+  <div class="banner" id="banner" style="display:none;">
+    暗流Pro实战数据平台 · <a onclick="showPayModal()">立即订阅仅需 ￥9.9/月</a>
+    <span id="expireWarn" class="expire-warn"></span>
   </div>
-
-  <!-- Landing Page -->
-  <div class="landing" id="landingPage">
-    <div class="hero">
-      <h1>数字货币<span class="hl">链上数据</span>，<br>用暗流 Pro 看得更准</h1>
-      <p>实时追踪 33 个主流币种的筹码分布、机构订单块、链上净流入数据。告别盲目跟单，用真实链上数据做决策。</p>
-      <div class="hero-actions">
-        <button class="btn btn-primary" onclick="showLoginModal()" style="padding:12px 32px;font-size:15px;">免费注册体验</button>
-        <button class="btn" onclick="document.getElementById('featuresSection').scrollIntoView({behavior:'smooth'})">了解更多</button>
-      </div>
-    </div>
-
-    <!-- Dashboard Preview -->
-    <div class="preview-section">
-      <div class="preview-card">
-        <div class="preview-header">
-          <div class="dots"><span></span><span></span><span></span></div>
-          <span style="font-size:12px;color:var(--text-muted);">暗流Pro · 实时数据面板</span>
-        </div>
-        <div class="preview-body">
-          <div class="mock-data">
-            <div class="mock-indicator">
-              <div class="label">BTC / USDT</div>
-              <div class="value up">$65,130.04</div>
-              <div class="sub">+2.34% 24H</div>
-            </div>
-            <div class="mock-indicator">
-              <div class="label">链上净流入 (24H)</div>
-              <div class="value up">+$1,247M</div>
-              <div class="sub">吸筹信号 · 10笔大额</div>
-            </div>
-            <div class="mock-indicator">
-              <div class="label">机构订单块</div>
-              <div class="value up">Bullish</div>
-              <div class="sub">主力看多信号增强</div>
-            </div>
-            <div class="mock-indicator">
-              <div class="label">清算痛点</div>
-              <div class="value down">$62,400</div>
-              <div class="sub">下方关键支撑</div>
-            </div>
-            <div class="mock-indicator">
-              <div class="label">趋势成本带</div>
-              <div class="value" style="color:var(--blue);">$63,150</div>
-              <div class="sub">短期持有者均价</div>
-            </div>
-            <div class="mock-indicator">
-              <div class="label">监控币种</div>
-              <div class="value" style="color:#c9d1d9;">33 个</div>
-              <div class="sub">BTC/ETH/SOL/XRP/DOGE...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Features -->
-    <div class="features-section" id="featuresSection">
-      <h2>专业级数据指标</h2>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="icon green">&#9733;</div>
-          <h3>实时多空监控</h3>
-          <p>追踪 33 个主流币种的实时买卖力量对比，捕捉市场情绪拐点，第一时间发现趋势转换信号。</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon blue">&#9830;</div>
-          <h3>筹码分布分析</h3>
-          <p>可视化不同价格区间的持仓成本分布，精准识别支撑位与阻力位，判断主力资金聚集区域。</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon purple">&#9650;</div>
-          <h3>机构订单块</h3>
-          <p>识别大资金进场的订单块（Order Block），追踪聪明钱的足迹，让散户也能看见机构动向。</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon gold">&#9783;</div>
-          <h3>链上净流入</h3>
-          <p>实时展示链上大额转入转出数据，发现吸筹与派发行为，提前预判主力意图。</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon red">&#9888;</div>
-          <h3>清算痛点地图</h3>
-          <p>标记市场上方与下方的高杠杆清算密集区，识别庄家可能"插针"的价格位置，规避爆仓风险。</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon green">&#9881;</div>
-          <h3>趋势成本带</h3>
-          <p>显示市场参与者的平均持仓成本，短期/长期持有者成本带叠加，辅助判断底部与顶部区域。</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pricing -->
-    <div class="pricing-section" id="pricingSection">
-      <h2>选择适合你的方案</h2>
-      <p class="pricing-sub">所有方案均包含全部 33 个币种 + 所有数据指标，无阉割</p>
-      <div class="pricing-grid">
-        <div class="pricing-card">
-          <div class="plan-name">7天体验</div>
-          <div class="price">￥9.90<small>/7天</small></div>
-          <div class="duration">适合首次体验 · 到期自动结束</div>
-          <ul class="features">
-            <li>全部33个币种</li>
-            <li>全部6大数据指标</li>
-            <li>实时数据刷新</li>
-            <li>7天完整体验</li>
-          </ul>
-          <button class="btn btn-outline" onclick="selectPlanAndPay('9.90','7天体验')">立即体验</button>
-        </div>
-        <div class="pricing-card recommended">
-          <div class="plan-name">月度会员</div>
-          <div class="price">￥29.90<small>/月</small></div>
-          <div class="duration">日均不到1元 · 自动续费可随时取消</div>
-          <ul class="features">
-            <li>全部33个币种</li>
-            <li>全部6大数据指标</li>
-            <li>实时数据刷新</li>
-            <li>优先客服支持</li>
-            <li>新指标优先体验</li>
-          </ul>
-          <button class="btn btn-primary" onclick="selectPlanAndPay('29.90','月卡')">立即订阅</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Trust Bar -->
-    <div class="trust-bar">
-      <div class="trust-item">&#128274; 数据加密传输</div>
-      <div class="trust-item">&#9889; 实时链上数据</div>
-      <div class="trust-item">&#10003; 7天无理由退款</div>
-      <div class="trust-item">&#128179; 安全支付通道</div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-      暗流Pro · 专业数字货币链上数据分析平台 · 数据来源：dash.hfd.fund<br>
-      投资有风险，数据仅供参考，不构成投资建议
-    </div>
-  </div>
-
-  <!-- Iframe Area (logged in + subscribed) -->
   <div class="iframe-wrapper" id="iframeWrapper">
+    <div class="login-prompt" id="loginPrompt">
+      <h2>暗流Pro - 专业数字货币分析平台</h2>
+      <p>登录后即可查看实时多空数据、筹码分布、机构订单块等专业指标</p>
+      <button class="btn btn-primary" onclick="showLoginModal()">登录 / 注册</button>
+    </div>
     <iframe id="mainFrame" style="display:none;" allow="clipboard-write"></iframe>
   </div>
 </div>
 
-<!-- Login Modal -->
 <div class="modal-overlay" id="loginModal">
   <div class="modal">
     <div class="tab-nav">
@@ -378,16 +88,12 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">注册</button>
     </div>
     <div class="tab-panel active" id="loginPanel">
-      <h2>欢迎回来</h2>
-      <p class="subtitle">登录后查看实时数据面板</p>
       <input type="email" id="loginEmail" placeholder="请输入邮箱" autocomplete="email">
       <input type="password" id="loginPassword" placeholder="输入密码（6位以上）">
       <button class="btn btn-primary" onclick="doLogin()">登录</button>
-      <div class="tip">没有账号？<a onclick="switchTab('register')">立即注册</a></div>
+      <div class="tip">没有账号？<a onclick="switchTab('register')">去注册</a></div>
     </div>
     <div class="tab-panel" id="registerPanel">
-      <h2>创建账号</h2>
-      <p class="subtitle">注册即可免费查看数据预览</p>
       <input type="email" id="regEmail" placeholder="请输入邮箱" autocomplete="email">
       <input type="password" id="regPassword" placeholder="输入密码（6位以上）">
       <input type="password" id="regConfirmPassword" placeholder="确认密码">
@@ -402,154 +108,220 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       <button class="btn btn-primary" onclick="doRegister()">注册</button>
       <div class="tip">已有账号？<a onclick="switchTab('login')">去登录</a></div>
     </div>
-    <button class="btn btn-ghost" onclick="closeLoginModal()" style="margin-top:8px;">取消</button>
+    <button class="btn" onclick="closeLoginModal()" style="margin-top:8px;">取消</button>
   </div>
 </div>
 
-<!-- Payment Modal -->
 <div class="modal-overlay" id="payModal">
-  <div class="modal" style="width:440px;">
-    <h2>升级暗流Pro会员</h2>
-    <p class="subtitle">解锁全部 33 个币种的实时链上数据</p>
+  <div class="modal" style="width:400px;max-height:90vh;overflow-y:auto;">
+    <h2>暗流Pro 订阅服务</h2>
 
-    <div class="plan-cards">
-      <div class="plan-card active" id="plan9" onclick="selectPlan('9.90','7天体验')">
-        <div class="price-text">￥9.90</div>
-        <div class="label-text">7天体验</div>
+    <!-- 步骤指示器 -->
+    <div class="step-indicator">
+      <div class="step active" id="step1">1. 选择方案</div>
+      <div class="step-arrow">→</div>
+      <div class="step" id="step2">2. 扫码支付</div>
+    </div>
+
+    <!-- 方案选择区 -->
+    <div id="planArea">
+      <div class="plan-box">
+        <div class="plan-header">
+          <span class="plan-name">7天体验</span>
+          <span class="plan-price">¥9.9</span>
+        </div>
+        <p class="plan-desc">解锁全部专业指标，7天到期</p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-pay wechat" onclick="pay(1, '9.90')">微信 ¥9.9</button>
+          <button class="btn-pay alipay" onclick="pay(2, '9.90')">支付宝 ¥9.9</button>
+        </div>
       </div>
-      <div class="plan-card" id="plan29" onclick="selectPlan('29.90','月卡')">
-        <div class="price-text">￥29.90</div>
-        <div class="label-text">月卡</div>
-        <div class="save-text">日均不到1元</div>
+
+      <div class="plan-box">
+        <div class="plan-header">
+          <span class="plan-name">月卡订阅</span>
+          <span class="plan-price">¥29.9</span>
+        </div>
+        <p class="plan-desc">解锁全部专业指标，30天有效  ·  性价比之选</p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-pay wechat" onclick="pay(1, '29.90')">微信 ¥29.9</button>
+          <button class="btn-pay alipay" onclick="pay(2, '29.90')">支付宝 ¥29.9</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <input id="payPassword" type="password" placeholder="输入暗流账户密码" style="width:100%;padding:10px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px;" />
       </div>
     </div>
 
-    <div class="pay-methods">
-      <div class="pay-method">
-        <input type="radio" name="payMethod" id="payWechat" value="1" checked onchange="onPayMethodChange()">
-        <label for="payWechat">微信支付</label>
+    <!-- 二维码支付区 -->
+    <div id="qrArea" style="display:none;text-align:center;">
+      <div style="background:#ffffff;border-radius:12px;padding:16px;display:inline-block;margin-bottom:12px;">
+        <img id="qrImage" style="max-width:200px;display:block;" />
       </div>
-      <div class="pay-method">
-        <input type="radio" name="payMethod" id="payAlipay" value="2" onchange="onPayMethodChange()">
-        <label for="payAlipay">支付宝</label>
-      </div>
+      <p id="qrStatus" style="color:#ffd666;font-size:13px;margin:8px 0;">等待扫码支付...</p>
+      <p id="qrExpire" style="color:#8b949e;font-size:11px;margin-bottom:8px;"></p>
+      <button class="btn btn-primary" id="btnPaid" onclick="checkPaymentManually()" style="display:none;margin-bottom:4px;">已完成支付，查询状态</button>
+      <button class="btn" id="btnBackPlan" onclick="backToPlans()" style="display:none;margin-bottom:8px;">返回重新选择</button>
+      <p id="qrRetry" style="color:#f85149;font-size:11px;display:none;"></p>
     </div>
 
-    <div class="qr-container" id="qrArea">
-      <p style="color:var(--text-muted);font-size:13px;">选择方案后点击"获取支付二维码"</p>
+    <!-- 客服信息 -->
+    <div style="border-top:1px solid #21262d;margin-top:12px;padding-top:12px;text-align:center;">
+      <p style="color:#8b949e;font-size:12px;margin-bottom:4px;">支付遇到问题？联系客服</p>
+      <p style="color:#58a6ff;font-size:14px;font-weight:bold;">QQ: 2954126133</p>
     </div>
 
-    <div class="qr-error" id="qrError"></div>
-
-    <div class="status-msg success" id="paySuccess" style="display:none;">
-      <strong>支付成功！</strong> 正在加载数据面板...
-    </div>
-
-    <button class="btn btn-primary" id="btnGetQR" onclick="doPay()">获取支付二维码</button>
-    <button class="btn btn-outline" id="btnPaid" onclick="checkPaymentManually()" style="display:none;">已完成支付，查看结果</button>
-    <button class="btn btn-ghost" id="btnRetryQR" onclick="doPay()" style="display:none;margin-top:4px;">重新获取二维码</button>
-    <button class="btn btn-ghost" onclick="closePayModal()" style="margin-top:8px;">取消</button>
-    <div class="tip">扫码支付后系统自动开通，如未跳转请点击"已完成支付"</div>
+    <button class="btn-cancel" onclick="closePayModal()">关闭</button>
   </div>
 </div>
 
 <script src="/js/supabase.min.js"></script>
+<!--
+Supabase subscriptions 表需新增字段:
+  darkflow_token TEXT  (可为 NULL)
+在 Supabase Dashboard → Table Editor → subscriptions → Add Column 中添加
+-->
 <script>
 const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
+const PROXY_BASE = '/api/proxy';
 
 let sb = null;
 let currentUser = null;
-let selectedPlan = { money: '9.90', label: '7天体验' };
-let paymentPollTimer = null;
-let qrRetryCount = 0;
 
-function showLoginModal() { resetQrState(); document.getElementById('loginModal').classList.add('active'); switchTab('login'); }
-function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
-
-function showPayModal() {
-  if (!currentUser) { showLoginModal(); return; }
-  resetQrState();
-  document.getElementById('payModal').classList.add('active');
-  selectPlan('9.90', '7天体验');
-  document.querySelector('#payWechat').checked = true;
+// ========== UI Functions (always available, defined before any init) ==========
+function showLoginModal() {
+  document.getElementById('loginModal').classList.add('active');
+  switchTab('login');
 }
-
+function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+function showPayModal() {
+  document.getElementById('payModal').classList.add('active');
+  resetPayModal();
+}
+function resetPayModal() {
+  document.getElementById('payPassword').value = '';
+  document.getElementById('planArea').style.display = 'block';
+  document.getElementById('qrArea').style.display = 'none';
+  document.getElementById('qrImage').src = '';
+  document.getElementById('qrStatus').textContent = '等待扫码支付...';
+  document.getElementById('qrStatus').style.color = '#ffd666';
+  document.getElementById('qrExpire').textContent = '';
+  document.getElementById('btnPaid').style.display = 'none';
+  document.getElementById('btnBackPlan').style.display = 'none';
+  document.getElementById('qrRetry').style.display = 'none';
+  document.getElementById('step1').className = 'step active';
+  document.getElementById('step2').className = 'step';
+  document.querySelectorAll('.btn-pay').forEach(b => b.style.display = '');
+  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+  currentOrderNo = null;
+}
 function closePayModal() {
   document.getElementById('payModal').classList.remove('active');
-  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
+  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+}
+function backToPlans() {
+  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+  resetPayModal();
+}
+function showQrStep() {
+  document.getElementById('planArea').style.display = 'none';
+  document.getElementById('qrArea').style.display = 'block';
+  document.getElementById('step1').className = 'step done';
+  document.getElementById('step2').className = 'step active';
+  // 3秒后显示手动查询按钮
+  setTimeout(() => {
+    if (document.getElementById('qrArea').style.display !== 'none') {
+      document.getElementById('btnPaid').style.display = 'inline-block';
+      document.getElementById('btnBackPlan').style.display = 'block';
+    }
+  }, 3000);
 }
 
-function resetQrState() {
-  qrRetryCount = 0;
-  document.getElementById('qrArea').innerHTML = '<p style="color:var(--text-muted);font-size:13px;">选择方案后点击"获取支付二维码"</p>';
-  document.getElementById('qrError').style.display = 'none';
-  document.getElementById('btnGetQR').style.display = '';
-  document.getElementById('btnRetryQR').style.display = 'none';
-  document.getElementById('btnPaid').style.display = 'none';
-  document.getElementById('paySuccess').style.display = 'none';
-  document.getElementById('btnGetQR').disabled = false;
-  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
-}
-
-function onPayMethodChange() { resetQrState(); }
-
+// ========== Supabase Initialization (safe, won't block script) ==========
 (function() {
   try {
     if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       init();
     } else {
-      document.getElementById('btnLogin').textContent = '登录（加载中）';
+      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
+      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
       document.getElementById('btnLogin').disabled = true;
     }
   } catch (e) {
-    document.getElementById('btnLogin').textContent = '登录（加载失败）';
+    console.error('Supabase 初始化失败:', e);
+    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
     document.getElementById('btnLogin').disabled = true;
   }
 })();
 
-function sbReady() { if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; } return true; }
+// ========== Helper ==========
+function sbReady() {
+  if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
+  return true;
+}
 
+// ========== Business Logic ==========
 async function init() {
   if (!sb) return;
   try {
     const { data: { session } } = await sb.auth.getSession();
-    if (session) { currentUser = session.user; onLogin(); }
-  } catch (e) {}
+    if (session) {
+      currentUser = session.user;
+      onLogin();
+    }
+  } catch (e) {
+    console.error('会话恢复失败:', e);
+  }
 }
 
 function switchTab(tab) {
-  var isLogin = tab === 'login';
+  const isLogin = tab === 'login';
   document.getElementById('tabLogin').classList.toggle('active', isLogin);
   document.getElementById('tabRegister').classList.toggle('active', !isLogin);
   document.getElementById('loginPanel').classList.toggle('active', isLogin);
   document.getElementById('registerPanel').classList.toggle('active', !isLogin);
+  clearLoginForms();
+}
+
+function clearLoginForms() {
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('regEmail').value = '';
+  document.getElementById('regPassword').value = '';
+  document.getElementById('regConfirmPassword').value = '';
+  document.getElementById('securityQuestion').value = '';
+  document.getElementById('securityAnswer').value = '';
 }
 
 async function doLogin() {
   if (!sbReady()) return;
-  var email = document.getElementById('loginEmail').value.trim();
-  var password = document.getElementById('loginPassword').value;
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
   if (!email || !password) return alert('请填写邮箱和密码');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
   if (password.length < 6) return alert('密码至少6位');
 
   try {
-    var { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) return alert('登录失败: ' + error.message);
     currentUser = data.user;
     onLogin();
-  } catch (e) { alert('操作失败，请重试'); }
+  } catch (e) {
+    console.error('登录异常:', e);
+    alert('操作失败，请重试');
+  }
 }
 
 async function doRegister() {
   if (!sbReady()) return;
-  var email = document.getElementById('regEmail').value.trim();
-  var password = document.getElementById('regPassword').value;
-  var confirmPassword = document.getElementById('regConfirmPassword').value;
-  var securityQuestion = document.getElementById('securityQuestion').value;
-  var securityAnswer = document.getElementById('securityAnswer').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
+  const securityQuestion = document.getElementById('securityQuestion').value;
+  const securityAnswer = document.getElementById('securityAnswer').value.trim();
 
   if (!email || !password || !confirmPassword) return alert('请填写所有必填项');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
@@ -558,31 +330,52 @@ async function doRegister() {
   if (!securityQuestion || !securityAnswer) return alert('请选择密保问题并填写答案');
 
   try {
-    var { data, error } = await sb.auth.signUp({ email, password });
+    const { data, error } = await sb.auth.signUp({ email, password });
     if (error) return alert('注册失败: ' + error.message);
 
-    var darkflowWarning = '';
+    // 同步注册暗流 dash.hfd.fund 账户
+    const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
+    let darkflowWarning = '';
     try {
-      var dfResp = await fetch('/api/register-darkflow', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password, security_question: securityQuestion, security_answer: securityAnswer })
+      const dfResp = await fetch('/api/register-darkflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(darkflowBody)
       });
-      var dfData = await dfResp.json();
+      const dfData = await dfResp.json();
       if (!dfData.darkflow || !dfData.darkflow.success) {
-        darkflowWarning = '\n\n暗流同步提示：可登录后重试';
+        const reason = (dfData.darkflow && dfData.darkflow.data && dfData.darkflow.data.message)
+          || (dfData.darkflow && dfData.darkflow.error)
+          || (dfData.darkflow ? 'HTTP ' + dfData.darkflow.status : '无响应');
+        console.error('[darkflow] 同步失败详情:', JSON.stringify(dfData.darkflow));
+        darkflowWarning = '\n\n暗流同步失败: ' + reason + '\n（不影响本站使用，可登录后重试）';
       }
-    } catch (e) { darkflowWarning = '\n\n暗流同步提示：可登录后重试'; }
+    } catch (e) {
+      console.error('[darkflow] 同步异常:', e.message);
+      darkflowWarning = '\n\n暗流同步失败: ' + e.message + '\n（不影响本站使用，可登录后重试）';
+    }
 
-    if (data.session) { currentUser = data.user; onLogin(); return; }
-    if (data.user) { alert('注册成功，请查看邮箱确认' + darkflowWarning); closeLoginModal(); return; }
+    if (data.session) {
+      currentUser = data.user;
+      onLogin();
+      return;
+    }
+    if (data.user) {
+      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）' + darkflowWarning);
+      closeLoginModal();
+      return;
+    }
     alert('注册请求已提交，请查看邮箱确认');
     closeLoginModal();
-  } catch (e) { alert('操作失败，请重试'); }
+  } catch (e) {
+    console.error('注册异常:', e);
+    alert('操作失败，请重试');
+  }
 }
 
 async function onLogin() {
   if (!sb) return;
-  document.getElementById('landingPage').style.display = 'none';
+  document.getElementById('loginPrompt').style.display = 'none';
   document.getElementById('mainFrame').style.display = 'block';
   document.getElementById('btnLogin').style.display = 'none';
   document.getElementById('btnLogout').style.display = 'inline-block';
@@ -592,170 +385,173 @@ async function onLogin() {
   closeLoginModal();
 
   try {
-    var { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+    const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
     if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
       document.getElementById('planBadge').style.display = 'inline';
       document.getElementById('btnUpgrade').style.display = 'none';
       document.getElementById('banner').style.display = 'none';
-      document.getElementById('iframeWrapper').style.display = 'block';
       loadFrame();
-    } else {
-      document.getElementById('iframeWrapper').style.display = 'none';
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('订阅查询失败:', e);
+  }
 }
 
 function loadFrame() {
-  var iframe = document.getElementById('mainFrame');
-  iframe.style.display = 'block';
-  if (!iframe.src) {
-    iframe.src = 'https://dash.hfd.fund/pro';
-  }
+  const iframe = document.getElementById('mainFrame');
+  iframe.src = PROXY_BASE + '/pro/';
 }
 
 async function logout() {
   if (!sbReady()) return;
-  try { await sb.auth.signOut(); } catch (e) {}
+  try {
+    await sb.auth.signOut();
+  } catch (e) {
+    console.error('登出失败:', e);
+  }
   currentUser = null;
-  document.getElementById('landingPage').style.display = '';
+  document.getElementById('loginPrompt').style.display = 'block';
   document.getElementById('mainFrame').style.display = 'none';
-  var iframe = document.getElementById('mainFrame');
-  iframe.src = '';
+  document.getElementById('mainFrame').src = '';
   document.getElementById('btnLogin').style.display = 'inline-block';
   document.getElementById('btnLogout').style.display = 'none';
   document.getElementById('btnUpgrade').style.display = 'none';
   document.getElementById('planBadge').style.display = 'none';
   document.getElementById('banner').style.display = 'none';
-  document.getElementById('iframeWrapper').style.display = 'none';
   document.getElementById('userEmail').textContent = '';
 }
 
-function selectPlan(money, label) {
-  selectedPlan.money = money;
-  selectedPlan.label = label;
-  document.getElementById('plan9').classList.toggle('active', money === '9.90');
-  document.getElementById('plan29').classList.toggle('active', money === '29.90');
-  resetQrState();
-}
+// ========== Payment Flow ==========
+let pollingTimer = null;
+let currentOrderNo = null;
 
-function selectPlanAndPay(money, label) {
-  if (!currentUser) { showLoginModal(); return; }
-  showPayModal();
-  selectPlan(money, label);
-}
-
-async function doPay() {
+async function pay(payType, money) {
   if (!currentUser) return alert('请先登录');
-  var payType = document.querySelector('input[name="payMethod"]:checked').value || '1';
-  var amount = selectedPlan.money;
-  qrRetryCount++;
+  const password = document.getElementById('payPassword').value.trim();
+  if (!password) return alert('请输入暗流账户密码');
+  if (password.length < 6) return alert('密码至少6位');
 
-  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
-
-  document.getElementById('qrArea').innerHTML = '<div class="spinner"></div><p style="color:var(--text-muted);font-size:13px;margin-top:12px;">正在获取支付二维码...</p>';
-  document.getElementById('qrError').style.display = 'none';
-  document.getElementById('btnGetQR').disabled = true;
-  document.getElementById('btnRetryQR').style.display = 'none';
-  document.getElementById('btnPaid').style.display = 'none';
-  document.getElementById('paySuccess').style.display = 'none';
+  showQrStep();
+  document.getElementById('qrStatus').textContent = '正在生成支付二维码...';
 
   try {
-    var resp = await fetch('/api/pay', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: currentUser.id, pay_type: parseInt(payType), money: amount })
+    const resp = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: currentUser.id, pay_type: payType, password, money })
     });
-    var result = await resp.json();
+    const result = await resp.json();
 
-    if (!resp.ok) {
-      throw new Error(result.error || 'HTTP ' + resp.status);
+    if (result.error) {
+      document.getElementById('qrStatus').textContent = '创建订单失败: ' + result.error;
+      document.getElementById('qrStatus').style.color = '#f85149';
+      document.getElementById('btnBackPlan').style.display = 'block';
+      return;
     }
 
-    var qrSrc = result.qr_img || result.qr || result.url;
-    if (qrSrc) {
-      document.getElementById('qrArea').innerHTML =
-        '<img src="' + qrSrc + '" style="max-width:200px;max-height:200px;border-radius:8px;" ' +
-        'onerror="document.getElementById(\'qrArea\').innerHTML=\'<p style=color:var(--red)>二维码加载失败</p>\';document.getElementById(\'btnRetryQR\').style.display=\'\';" ' +
-        '/>' +
-        '<p class="qr-hint">请使用' + (payType == '1' ? '微信' : '支付宝') + '扫码支付 ￥' + amount + '</p>';
-      document.getElementById('btnGetQR').style.display = 'none';
-      document.getElementById('btnPaid').style.display = '';
-      startPaymentPolling();
-    } else {
-      throw new Error('支付接口未返回二维码');
+    currentOrderNo = result.order_no;
+
+    if (result.qr_img && result.qr_img.length > 100) {
+      document.getElementById('qrImage').src = result.qr_img;
+      // QR 加载失败重试
+      let qrRetries = 0;
+      document.getElementById('qrImage').onerror = function() {
+        qrRetries++;
+        if (qrRetries <= 3) {
+          document.getElementById('qrRetry').style.display = 'block';
+          document.getElementById('qrRetry').textContent = '二维码加载失败，正在重试(' + qrRetries + '/3)...';
+          setTimeout(() => { document.getElementById('qrImage').src = result.qr_img + '&t=' + Date.now(); }, 1000);
+        } else {
+          document.getElementById('qrRetry').textContent = '二维码加载失败，请使用支付链接或联系客服 QQ: 2954126133';
+        }
+      };
+      document.getElementById('qrImage').onload = function() {
+        document.getElementById('qrRetry').style.display = 'none';
+      };
     }
+    document.getElementById('qrStatus').textContent = '请扫码支付 ￥' + (result.realmoney || result.money || money);
+    if (result.expires_in) {
+      document.getElementById('qrExpire').textContent = '有效期至 ' + result.expires_in;
+    }
+
+    startPolling(result.order_no);
   } catch (e) {
-    document.getElementById('qrArea').innerHTML = '<p style="color:var(--red);">获取二维码失败</p>';
-    document.getElementById('qrError').textContent = '获取支付二维码失败: ' + e.message + '。请检查网络后重试。';
-    document.getElementById('qrError').style.display = 'block';
-    document.getElementById('btnGetQR').disabled = false;
-    if (qrRetryCount < 3) {
-      document.getElementById('btnRetryQR').style.display = '';
-      document.getElementById('btnRetryQR').textContent = '重新获取（第' + qrRetryCount + '次）';
-    }
+    document.getElementById('qrStatus').textContent = '网络错误: ' + e.message;
+    document.getElementById('qrStatus').style.color = '#f85149';
   }
 }
 
-function startPaymentPolling() {
-  var pollCount = 0;
-  var maxPolls = 200;
-  var pollInterval = 2000;
-
-  paymentPollTimer = setInterval(async function() {
-    pollCount++;
-    try {
-      var { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
-      if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
-        clearInterval(paymentPollTimer);
-        paymentPollTimer = null;
-        onPaymentSuccess();
-      }
-    } catch (e) {}
-    if (pollCount >= maxPolls) {
-      clearInterval(paymentPollTimer);
-      paymentPollTimer = null;
+async function checkPaymentManually() {
+  if (!currentOrderNo) return alert('没有待查询的订单');
+  document.getElementById('qrStatus').textContent = '正在查询支付状态...';
+  document.getElementById('qrStatus').style.color = '#ffd666';
+  try {
+    const resp = await fetch('/api/query?order_no=' + currentOrderNo);
+    const data = await resp.json();
+    if (data.status === 'success' || data.status === 'payed') {
+      handlePaymentSuccess();
+    } else {
+      document.getElementById('qrStatus').textContent = '暂未检测到支付，请确认是否已完成扫码付款';
+      document.getElementById('qrStatus').style.color = '#f85149';
+      setTimeout(() => {
+        document.getElementById('qrStatus').textContent = '请扫码支付';
+        document.getElementById('qrStatus').style.color = '#ffd666';
+      }, 2000);
     }
-  }, pollInterval);
+  } catch (e) {
+    document.getElementById('qrStatus').textContent = '查询失败: ' + e.message;
+    document.getElementById('qrStatus').style.color = '#f85149';
+  }
 }
 
-function onPaymentSuccess() {
+function handlePaymentSuccess() {
+  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+  document.getElementById('qrStatus').textContent = '支付成功！正在跳转暗流Pro...';
+  document.getElementById('qrStatus').style.color = '#3fb950';
   document.getElementById('btnPaid').style.display = 'none';
-  document.getElementById('btnGetQR').style.display = 'none';
-  document.getElementById('btnRetryQR').style.display = 'none';
-  document.getElementById('paySuccess').style.display = 'block';
+  document.getElementById('btnBackPlan').style.display = 'none';
 
-  setTimeout(function() {
+  setTimeout(() => {
     closePayModal();
     document.getElementById('planBadge').style.display = 'inline';
     document.getElementById('btnUpgrade').style.display = 'none';
     document.getElementById('banner').style.display = 'none';
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('iframeWrapper').style.display = 'block';
     loadFrame();
   }, 1200);
 }
 
-async function checkPaymentManually() {
-  if (!sbReady() || !currentUser) return;
-  document.getElementById('btnPaid').disabled = true;
-  document.getElementById('btnPaid').textContent = '正在查询...';
-
-  try {
-    var { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
-    if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
-      if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
-      onPaymentSuccess();
-      return;
+function startPolling(orderNo) {
+  if (pollingTimer) clearInterval(pollingTimer);
+  let pollCount = 0;
+  pollingTimer = setInterval(async () => {
+    pollCount++;
+    try {
+      const resp = await fetch('/api/query?order_no=' + orderNo);
+      const data = await resp.json();
+      if (data.status === 'success' || data.status === 'payed') {
+        handlePaymentSuccess();
+        return;
+      } else if (data.status === 'expire') {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+        document.getElementById('qrStatus').textContent = '二维码已过期，请重新选择方案';
+        document.getElementById('qrStatus').style.color = '#f85149';
+        document.getElementById('btnPaid').style.display = 'none';
+        document.getElementById('btnBackPlan').style.display = 'block';
+      }
+      if (pollCount > 120) {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+        document.getElementById('qrStatus').textContent = '支付超时，请重新操作';
+        document.getElementById('qrStatus').style.color = '#f85149';
+        document.getElementById('btnPaid').style.display = 'none';
+        document.getElementById('btnBackPlan').style.display = 'block';
+      }
+    } catch (e) {
+      console.error('轮询失败:', e);
     }
-  } catch (e) {}
-
-  document.getElementById('btnPaid').textContent = '暂未查到，点此重试';
-  document.getElementById('btnPaid').disabled = false;
-
-  var errEl = document.getElementById('qrError');
-  errEl.textContent = '暂未检测到支付记录。请确认已完成支付，或等待 1-2 分钟后重试。如已支付超过 5 分钟仍未生效，请联系客服。';
-  errEl.style.display = 'block';
+  }, 2000);
 }
-
 </script>
 </body>
 </html>
