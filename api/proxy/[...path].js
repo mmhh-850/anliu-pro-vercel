@@ -4,26 +4,15 @@ const http = require("http");
 const INJECT_SCRIPT = `
 <script><!-- Marvis -->
 (function(){
-  var FW=window.fetch,XH=window.XMLHttpRequest,B=location.origin;
-  function via(u){
-    var s=typeof u=="string"?u:(u.url||u.toString());
-    var m=s.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.*)/);
-    if(m)s=m[1];
-    else if(s.startsWith("/"))s=s.slice(1);
-    if(s.startsWith("api/proxy/"))return u;
-    return B+"/api/proxy/"+encodeURIComponent(s);
-  }
-  window.fetch=function(u,o){return FW(via(u),o||{});};
-  var O=XH.prototype.open;
-  XH.prototype.open=function(m,u){arguments[1]=via(u);return O.apply(this,arguments);};
-  if(!localStorage.getItem("hfd_authed")){
-    FW(B+"/api/proxy/api%2Flogin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"mm",password:"5467942qw"})})
-    .then(function(r){return r.json()}).then(function(d){
-      var t=d.access_token||d.token||"";
-      if(t){localStorage.setItem("hfd_authed","1");localStorage.setItem("hfd_access_token",t);localStorage.setItem("hfd_username","mm");}
-      location.reload();
-    }).catch(function(){});
-  }
+var FW=window.fetch,XH=window.XMLHttpRequest,B=location.origin;
+if(!localStorage.getItem("hfd_authed")){
+FW(B+"/api/proxy/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"mm",password:"5467942qw"})})
+.then(function(r){return r.json()}).then(function(d){
+var t=d.access_token||d.token||"";
+if(t){localStorage.setItem("hfd_authed","1");localStorage.setItem("hfd_access_token",t);localStorage.setItem("hfd_username","mm");}
+location.reload();
+}).catch(function(){});
+}
 })();
 <\/script>
 `;
@@ -40,9 +29,7 @@ function doReq(url, method, headers, body) {
     var req = mod.request(opts, function(r) {
       var chunks = [];
       r.on("data", function(c) { chunks.push(c); });
-      r.on("end", function() {
-        resolve({ status: r.statusCode, headers: r.headers, body: Buffer.concat(chunks) });
-      });
+      r.on("end", function() { resolve({ status: r.statusCode, headers: r.headers, body: Buffer.concat(chunks) }); });
     });
     req.on("error", reject);
     req.on("timeout", function() { req.destroy(); reject(new Error("timeout")); });
@@ -51,49 +38,50 @@ function doReq(url, method, headers, body) {
   });
 }
 
-function isHtml(ct) {
-  if (!ct) return false;
-  return ct.indexOf("text/html") >= 0;
-}
-
 module.exports = async function handler(req, res) {
   var pp = req.query.path || [];
   var subPath = decodeURIComponent(pp.join("/") || "");
   var targetUrl = "https://dash.hfd.fund/" + subPath;
   
+  if (subPath === "login") {
+    targetUrl = "https://dash.hfd.fund/api/login";
+  }
+  
   try {
     var fwd = {};
-    ["content-type", "accept", "cookie", "authorization"].forEach(function(k) {
+    ["content-type", "accept", "authorization", "cookie", "origin"].forEach(function(k) {
       if (req.headers[k]) fwd[k] = req.headers[k];
     });
+    fwd["host"] = "dash.hfd.fund";
     
     var body = null;
     if (req.body) {
       body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
     } else if (req.method !== "GET" && req.method !== "HEAD") {
-      body = await new Promise(function(resolve) {
-        var chunks = [];
-        req.on("data", function(c) { chunks.push(c); });
-        req.on("end", function() { resolve(Buffer.concat(chunks).toString()); });
-      });
+      try {
+        body = await new Promise(function(resolve, reject) {
+          var chunks = [], timer = setTimeout(function() { resolve(""); }, 3000);
+          req.on("data", function(c) { chunks.push(c); clearTimeout(timer); timer = setTimeout(function() { resolve(Buffer.concat(chunks).toString()); }, 3000); });
+          req.on("end", function() { clearTimeout(timer); resolve(Buffer.concat(chunks).toString()); });
+        });
+      } catch(e) { body = ""; }
     }
     
     var result = await doReq(targetUrl, req.method, fwd, body);
     
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "*");
-    res.setHeader("Access-Control-Allow-Headers", "*");
+    var ct = (result.headers["content-type"] || "").toLowerCase();
+    var isJson = ct.indexOf("application/json") >= 0;
+    var isHtml = ct.indexOf("text/html") >= 0;
     
-    var skip = ["content-encoding", "transfer-encoding", "content-length"];
+    var skip = ["content-encoding", "transfer-encoding", "content-length", "content-security-policy", "x-frame-options"];
     Object.keys(result.headers).forEach(function(k) {
       if (skip.indexOf(k.toLowerCase()) < 0) {
         res.setHeader(k, result.headers[k]);
       }
     });
     
-    var ct = result.headers["content-type"] || "";
     var respBody = result.body;
-    if (isHtml(ct) && Buffer.isBuffer(respBody)) {
+    if (isHtml && Buffer.isBuffer(respBody)) {
       var html = respBody.toString("utf-8");
       html = html.replace("<head>", "<head>" + INJECT_SCRIPT);
       respBody = Buffer.from(html, "utf-8");
