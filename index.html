@@ -319,34 +319,34 @@ async function onLogin() {
 function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
-  iframe.src = PROXY_BASE + '/pro';
-  iframe.onload = function() {
-    try {
-      var doc = iframe.contentDocument || iframe.contentWindow.document;
-      if (!doc) return;
-      if (!doc.querySelector('base')) {
-        var base = doc.createElement('base');
-        base.href = 'https://dash.hfd.fund/';
-        doc.head.insertBefore(base, doc.head.firstChild);
-      }
-      var s = doc.createElement('script');
-      s.textContent = [
-        '(function(){',
-        'var U="mm",P="5467942qw",FW=window.fetch,XH=window.XMLHttpRequest,PROXY="/api/proxy-api?p=";',
-        'function viaProxy(u){',
-        '  var m=u.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);',
-        '  if(m) return PROXY+"?p="+encodeURIComponent(m[1]);',
-        '  return u;',
-        '}',
-        'window.fetch=function(u,o){var nu=typeof u=="string"?viaProxy(u):u;return FW.call(this,nu,o||{});};',
-        'var OO=XH.prototype.open;',
-        'XH.prototype.open=function(m,u){arguments[1]=viaProxy(u);return OO.apply(this,arguments);};',
-        'if(!localStorage.getItem("hfd_authed")){FW("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:U,password:P})}).then(function(r){return r.json()}).then(function(d){var tk=d.access_token||d.token||"";if(tk){localStorage.setItem("hfd_authed","1");localStorage.setItem("hfd_access_token",tk);localStorage.setItem("hfd_username",U);location.reload();}}).catch(function(){});}',
-        '})();'
-      ].join('\n');
-      doc.head.appendChild(s);
-    } catch(e) { console.log('e:', e); }
-  };
+  
+  // Fetch HTML via proxy
+  fetch(PROXY_BASE + '/pro').then(function(r) { return r.text(); }).then(function(html) {
+    // Inject interceptor BEFORE any page scripts run
+    var inject = '<base href="https://dash.hfd.fund/"><script>' +
+      '(function(){' +
+      'var FW=window.fetch,XH=window.XMLHttpRequest,P="/api/proxy-api?p=";' +
+      'function via(u){var m=u.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);return m?P+encodeURIComponent(m[1]):u;}' +
+      'window.fetch=function(u,o){return FW(via(typeof u=="string"?u:u.url||u.toString()),o||{});};' +
+      'var O=XH.prototype.open;' +
+      'XH.prototype.open=function(m,u){arguments[1]=via(u);return O.apply(this,arguments);};' +
+      // Auto-login: call login API via proxy, store token, then reload srcdoc
+      'if(!localStorage.getItem("hfd_authed")){' +
+        'FW("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"mm",password:"5467942qw"})})' +
+        '.then(function(r){return r.json()}).then(function(d){' +
+          'var t=d.access_token||d.token||"";' +
+          'if(t){localStorage.setItem("hfd_authed","1");localStorage.setItem("hfd_access_token",t);localStorage.setItem("hfd_username","mm");}' +
+          'location.reload();' +
+        '}).catch(function(){});' +
+      '}' +
+      '})();' +
+      '<\/script>';
+    html = html.replace('<head>', '<head>'+inject);
+    iframe.srcdoc = html;
+  }).catch(function(e) {
+    console.log('Frame load failed:', e);
+    iframe.src = PROXY_BASE + '/pro';
+  });
 }
 async function logout() {
   if (!sbReady()) return;
