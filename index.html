@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>暗流 Pro</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e27;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+.header{padding:12px 24px;background:linear-gradient(135deg,#1a1f4a,#0d1137);display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;background:linear-gradient(90deg,#7c8aff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.status{font-size:12px;color:#4ade80;display:flex;align-items:center;gap:6px}
+.status::before{content:'';display:inline-block;width:8px;height:8px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#mainFrame{width:100%;height:calc(100vh - 52px);border:none;display:block}
+</style>
+</head>
+<body>
+<div class="header"><h1>暗流 Pro</h1><span class="status">直连数据源</span></div>
+<iframe id="mainFrame" src="https://dash.hfd.fund/pro"></iframe>
+</body>
+</html>
