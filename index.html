@@ -332,15 +332,15 @@ function loadFrame() {
       var s = doc.createElement('script');
       s.textContent = [
         '(function(){',
-        // Auto-login with credentials
         'var U="mm",P="5467942qw",FW=window.fetch,XH=window.XMLHttpRequest,PROXY="/api/proxy/";',
-        'function viaProxy(u){return u.replace(/^https?:\\/\\/dash\\.hfd\\.fund\\//,PROXY);}',
-        // Intercept fetch
-        'window.fetch=function(u,o){var nu=typeof u=="string"?viaProxy(u):u;if(nu!==u&&typeof u=="string"){nu=viaProxy(u);return FW.call(this,nu,o);}return FW.apply(this,arguments);};',
-        // Intercept XMLHttpRequest
-        'var OrigOpen=XH.prototype.open;',
-        'XH.prototype.open=function(m,u){var nu=viaProxy(u);arguments[1]=nu;return OrigOpen.apply(this,arguments);};',
-        // Auto-login
+        'function viaProxy(u){',
+        '  var m=u.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);',
+        '  if(m) return PROXY+"?p="+encodeURIComponent(m[1]);',
+        '  return u;',
+        '}',
+        'window.fetch=function(u,o){var nu=typeof u=="string"?viaProxy(u):u;return FW.call(this,nu,o||{});};',
+        'var OO=XH.prototype.open;',
+        'XH.prototype.open=function(m,u){arguments[1]=viaProxy(u);return OO.apply(this,arguments);};',
         'if(!localStorage.getItem("hfd_authed")){FW("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:U,password:P})}).then(function(r){return r.json()}).then(function(d){var tk=d.access_token||d.token||"";if(tk){localStorage.setItem("hfd_authed","1");localStorage.setItem("hfd_access_token",tk);localStorage.setItem("hfd_username",U);location.reload();}}).catch(function(){});}',
         '})();'
       ].join('\n');
