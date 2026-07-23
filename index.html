@@ -3,555 +3,1010 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>暗流Pro</title>
+<title>鏆楁祦Pro - 鏈烘瀯绾у姞瀵嗚揣甯佸绌虹洃鎺?/title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
-  .container { display: flex; flex-direction: column; min-height: 100vh; }
-  .topbar { background: #161b22; border-bottom: 1px solid #30363d; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-  .topbar h1 { font-size: 18px; color: #58a6ff; }
-  .user-area { display: flex; align-items: center; gap: 12px; }
-  .btn { padding: 6px 16px; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 13px; }
-  .btn:hover { background: #30363d; }
-  .btn-primary { background: #238636; border-color: #2ea043; color: #fff; }
-  .btn-primary:hover { background: #2ea043; }
-  .price-tag { background: #1f6feb; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-  .modal-overlay.active { display: flex; }
-  .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; width: 380px; }
-  .modal h2 { font-size: 20px; margin-bottom: 16px; color: #f0f6fc; }
-  .modal input { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; }
-  .modal select { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; cursor: pointer; }
-  .modal .btn { width: 100%; margin-top: 8px; }
-  .modal .tip { font-size: 12px; color: #8b949e; margin-top: 12px; text-align: center; }
-  .iframe-wrapper { flex: 1; position: relative; }
-  .iframe-wrapper iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; }
-  .login-prompt { text-align: center; padding: 80px 20px; }
-  .login-prompt h2 { font-size: 24px; margin-bottom: 12px; }
-  .login-prompt p { color: #8b949e; margin-bottom: 24px; }
-  .banner { background: linear-gradient(135deg, #1f6feb, #238636); padding: 12px 20px; text-align: center; font-size: 14px; color: #fff; }
-  .banner a { color: #ffd666; text-decoration: underline; cursor: pointer; }
-  .expire-warn { color: #f85149; font-size: 12px; margin-left: 8px; }
-  .tab-nav { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 16px; }
-  .tab-btn { flex: 1; padding: 8px 16px; border: none; background: transparent; color: #8b949e; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
-  .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-  .modal .tip a { color: #58a6ff; cursor: pointer; text-decoration: none; }
-  .modal .tip a:hover { text-decoration: underline; }
-  .plan-box { border:1px solid #30363d; border-radius:8px; padding:16px; margin-bottom:12px; background:#0d1117; }
-  .plan-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .plan-name { font-size:16px; font-weight:bold; color:#f0f6fc; }
-  .plan-price { font-size:22px; font-weight:bold; color:#ffd666; }
-  .plan-desc { color:#8b949e; font-size:13px; margin-bottom:12px; }
-  .btn-pay { display:inline-block; padding:8px 16px; border-radius:6px; font-size:13px; margin-right:8px; cursor:pointer; border:none; }
-  .btn-pay.wechat { background:#2da44e; color:#fff; }
-  .btn-pay.alipay { background:#0969da; color:#fff; }
-  .btn-cancel { display:block; width:100%; padding:10px; margin-top:12px; background:#21262d; color:#c9d1d9; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
-  .step-indicator { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; font-size:13px; }
-  .step { color:#484f58; padding:4px 10px; border-radius:12px; background:#21262d; }
-  .step.active { color:#58a6ff; background:#1f3a5f; }
-  .step-arrow { color:#30363d; }
-  .step.done { color:#3fb950; }
+:root {
+  --bg: #080c14;
+  --bg2: #0d1117;
+  --card: #111827;
+  --card-hover: #161b2a;
+  --border: #1e293b;
+  --border-light: #334155;
+  --accent: #10b981;
+  --accent-hover: #34d399;
+  --accent-glow: rgba(16,185,129,0.15);
+  --gold: #f59e0b;
+  --gold-dark: #b45309;
+  --text: #e2e8f0;
+  --text-bright: #f8fafc;
+  --muted: #64748b;
+  --danger: #ef4444;
+  --success: #10b981;
+  --gradient-1: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #0a1628 50%, #0d1f17 100%);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 鍏ㄥ眬鑳屾櫙鍏夋檿 */
+.bg-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16,185,129,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 40% at 80% 80%, rgba(245,158,11,0.04) 0%, transparent 50%),
+              radial-gradient(ellipse 50% 60% at 20% 30%, rgba(16,185,129,0.04) 0%, transparent 50%);
+}
+
+/* 瀹瑰櫒 */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+.section { padding: 80px 0; }
+
+/* 瀵艰埅鏍?*/
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(8,12,20,0.85); backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(30,41,59,0.5);
+  padding: 0 24px;
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.logo { font-size: 20px; font-weight: 800; color: var(--text-bright); letter-spacing: -0.5px; display: flex; align-items: center; gap: 6px; }
+.logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 12px var(--accent-glow); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+.nav-actions { display: flex; gap: 10px; align-items: center; }
+.avatar-circle {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--gradient-1); display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: #fff; cursor: pointer; transition: transform 0.2s;
+}
+.avatar-circle:hover { transform: scale(1.08); }
+
+/* 鎸夐挳绯荤粺 */
+.btn {
+  padding: 10px 22px; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 14px; font-weight: 600; transition: all 0.2s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.btn-primary { background: var(--gradient-1); color: #fff; box-shadow: 0 2px 8px var(--accent-glow); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px var(--accent-glow); }
+.btn-outline { background: transparent; border: 1px solid var(--border-light); color: var(--text); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; font-size: 15px; padding: 12px 32px; font-weight: 700; box-shadow: 0 4px 16px rgba(245,158,11,0.2); }
+.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,158,11,0.3); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-block { width: 100%; justify-content: center; }
+.btn-lg { padding: 14px 36px; font-size: 16px; border-radius: 10px; }
+
+/* Hero */
+.hero { padding: 140px 0 80px; text-align: center; position: relative; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);
+  border-radius: 20px; padding: 6px 16px; font-size: 13px; color: var(--accent);
+  margin-bottom: 24px; font-weight: 500;
+}
+.hero-badge .live-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite; }
+.hero h1 {
+  font-size: 48px; font-weight: 800; line-height: 1.2;
+  background: linear-gradient(135deg, #f8fafc 0%, #10b981 40%, #34d399 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 16px; letter-spacing: -1px;
+}
+.hero p { font-size: 18px; color: var(--muted); max-width: 600px; margin: 0 auto 32px; }
+.hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* 鏁版嵁棰勮 */
+.data-preview {
+  max-width: 900px; margin: 40px auto 0;
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+}
+.stat-card {
+  background: linear-gradient(135deg, rgba(17,24,39,0.9), rgba(22,27,42,0.8));
+  border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  text-align: center; backdrop-filter: blur(10px);
+}
+.stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.stat-card .value { font-size: 24px; font-weight: 800; color: var(--text-bright); }
+.stat-card .change { font-size: 13px; margin-top: 4px; }
+.stat-card .change.up { color: var(--success); }
+.stat-card .change.down { color: var(--danger); }
+
+/* 鍗栫偣鍗＄墖 */
+.features { padding: 60px 0; }
+.section-title { text-align: center; margin-bottom: 48px; }
+.section-title h2 { font-size: 32px; font-weight: 700; color: var(--text-bright); margin-bottom: 8px; }
+.section-title p { color: var(--muted); font-size: 15px; }
+.feature-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.feature-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px 24px; transition: all 0.3s;
+  position: relative; overflow: hidden;
+}
+.feature-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--gradient-1); opacity: 0; transition: opacity 0.3s;
+}
+.feature-card:hover {
+  border-color: var(--border-light); transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.feature-card:hover::before { opacity: 1; }
+.feature-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 16px;
+  background: rgba(16,185,129,0.1); color: var(--accent);
+}
+.feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text-bright); }
+.feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* 瀹氫环 */
+.pricing-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 24px; max-width: 720px; margin: 0 auto; }
+.pricing-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 36px 32px; text-align: center;
+  transition: all 0.3s; position: relative;
+}
+.pricing-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+.pricing-card.recommended { border-color: var(--gold); background: linear-gradient(135deg, rgba(17,24,39,0.95), rgba(245,158,11,0.05)); }
+.pricing-badge {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #0f172a; padding: 5px 18px; border-radius: 20px;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.pricing-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--text-bright); }
+.pricing-card .price { font-size: 46px; font-weight: 800; margin-bottom: 4px; color: var(--text-bright); }
+.pricing-card .price .yen { font-size: 24px; font-weight: 600; }
+.pricing-card .period { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+.pricing-card ul { list-style: none; text-align: left; margin: 0 0 24px; }
+.pricing-card li { padding: 8px 0; color: var(--muted); font-size: 13px; border-bottom: 1px solid rgba(30,41,59,0.4); display: flex; align-items: center; gap: 8px; }
+.pricing-card li::before { content: ''; width: 16px; height: 16px; background: rgba(16,185,129,0.15); border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent); }
+.pricing-card li:last-child { border-bottom: none; }
+
+/* 淇′换鏍?*/
+.trust-bar {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px 32px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 40px; flex-wrap: wrap; max-width: 720px; margin: 0 auto;
+}
+.trust-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.trust-item .trust-icon { color: var(--accent); font-size: 16px; }
+.trust-item strong { color: var(--text); }
+
+/* 椤佃剼 */
+footer { text-align: center; padding: 40px 0; border-top: 1px solid var(--border); margin-top: 60px; }
+footer p { color: var(--muted); font-size: 12px; }
+
+/* 鐧诲綍椤?*/
+.auth-section { display: none; min-height: 80vh; align-items: center; justify-content: center; padding: 100px 20px 40px; }
+.auth-section.active { display: flex; }
+.auth-card {
+  width: 100%; max-width: 400px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 36px;
+}
+.auth-card h2 { font-size: 22px; margin-bottom: 6px; color: var(--text-bright); }
+.auth-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+.input-group { margin-bottom: 16px; }
+.input-group label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.input-group input {
+  width: 100%; padding: 11px 14px; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-bright); font-size: 14px; outline: none; transition: border 0.2s;
+}
+.input-group input:focus { border-color: var(--accent); }
+.error-msg { color: var(--danger); font-size: 13px; margin-bottom: 12px; display: none; }
+.auth-switch { text-align: center; margin-top: 16px; font-size: 13px; color: var(--muted); }
+.auth-switch a { color: var(--accent); cursor: pointer; text-decoration: none; font-weight: 600; }
+.auth-switch a:hover { text-decoration: underline; }
+
+/* 瀹氫环椤?鐙珛) */
+.pricing-section { display: none; padding: 100px 0 60px; }
+.pricing-section.active { display: block; }
+.pricing-header { text-align: center; margin-bottom: 48px; }
+.pricing-header h2 { font-size: 32px; font-weight: 700; color: var(--text-bright); margin-bottom: 8px; }
+.pricing-header p { color: var(--muted); font-size: 15px; }
+
+/* 浠〃鐩?*/
+.dashboard-section { display: none; height: calc(100vh - 56px); margin-top: 56px; }
+.dashboard-section.active { display: block; }
+.dashboard-section iframe { width: 100%; height: 100%; border: none; }
+
+/* 鏀粯寮圭獥 */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--card); border: 1px solid var(--border-light);
+  border-radius: 18px; padding: 32px 28px; max-width: 420px; width: 92%;
+  text-align: center; max-height: 90vh; overflow-y: auto;
+}
+.modal h3 { font-size: 20px; margin-bottom: 10px; color: var(--text-bright); }
+
+/* 姝ラ鎸囩ず鍣?*/
+.step-indicator { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 24px; }
+.step { display: flex; align-items: center; gap: 8px; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; border: 2px solid var(--border-light); color: var(--muted);
+  transition: all 0.3s; flex-shrink: 0;
+}
+.step.active .step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+.step.completed .step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+.step-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.step.active .step-label { color: var(--accent); font-weight: 600; }
+.step-line { width: 40px; height: 1px; background: var(--border); margin: 0 8px; }
+.step-line.done { background: var(--accent); }
+
+/* 鏀粯鏂规閫夋嫨 */
+.plan-select { display: flex; gap: 10px; justify-content: center; margin: 16px 0; }
+.plan-option {
+  flex: 1; padding: 14px 10px; border: 2px solid var(--border); border-radius: 10px;
+  cursor: pointer; background: transparent; color: var(--text); font-size: 13px;
+  transition: all 0.2s; text-align: center;
+}
+.plan-option.selected { border-color: var(--accent); background: rgba(16,185,129,0.08); }
+.plan-option .plan-price { font-size: 20px; font-weight: 800; color: var(--text-bright); margin-bottom: 2px; }
+.plan-option .plan-name { font-size: 12px; color: var(--muted); }
+
+/* 鏀粯鏂瑰紡 */
+.pay-methods { display: flex; gap: 10px; justify-content: center; margin: 16px 0; }
+.pay-method {
+  flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px;
+  cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;
+  background: transparent; color: var(--text);
+}
+.pay-method.selected { border-color: var(--accent); background: rgba(16,185,129,0.08); color: var(--accent); }
+
+/* QR鍖哄煙 */
+.qr-area {
+  background: #fff; border-radius: 14px; padding: 16px;
+  display: inline-block; margin: 16px 0; position: relative; min-width: 220px;
+}
+.qr-area img { width: 200px; height: 200px; display: block; image-rendering: auto; }
+.qr-area .qr-price {
+  margin-top: 10px; font-size: 16px; font-weight: 700; color: #0f172a;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.qr-area .qr-price .yen-sign { font-size: 12px; }
+
+/* 鏀粯鐘舵€佹彁绀?*/
+.pay-status { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.pay-status.success { color: var(--success); }
+.pay-hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
+.pay-contact {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted);
+}
+.pay-contact a { color: var(--accent); text-decoration: none; }
+
+/* 寮圭獥鎸夐挳缁?*/
+.modal-btns { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+.modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+.modal-close:hover { color: var(--text); }
+
+/* 鍔犺浇鏃嬭浆 */
+.spinner {
+  width: 36px; height: 36px; border: 3px solid #e5e7eb;
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.7s linear infinite; margin: 20px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 鎴愬姛鍔ㄧ敾 */
+.success-check { font-size: 48px; color: var(--success); margin: 16px 0; animation: scaleIn 0.4s ease-out; }
+@keyframes scaleIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+/* 鐢ㄦ埛涓績 */
+.user-section { display: none; padding: 100px 0 60px; }
+.user-section.active { display: block; }
+.user-section h2 { font-size: 24px; margin-bottom: 24px; color: var(--text-bright); }
+.info-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+.info-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+}
+.info-item .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.info-item .value { font-size: 20px; font-weight: 700; color: var(--text-bright); }
+.ref-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px;
+}
+.ref-box h3 { font-size: 16px; margin-bottom: 8px; }
+.ref-box p { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+.ref-link {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; font-size: 12px; word-break: break-all;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.copy-btn { cursor: pointer; color: var(--accent); font-size: 12px; white-space: nowrap; font-weight: 600; }
+.copy-btn:hover { color: var(--accent-hover); }
+.logout-btn { margin-top: 16px; }
+
+/* Toast */
+.toast {
+  position: fixed; top: 20px; right: 20px; background: var(--success);
+  color: #fff; padding: 10px 20px; border-radius: 8px; z-index: 2000;
+  display: none; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.toast.error { background: var(--danger); }
+
+/* 鍝嶅簲寮?*/
+@media (max-width: 768px) {
+  .hero h1 { font-size: 30px; }
+  .hero p { font-size: 15px; }
+  .data-preview { grid-template-columns: repeat(2,1fr); }
+  .feature-grid { grid-template-columns: repeat(2,1fr); }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: repeat(2,1fr); }
+  .section { padding: 50px 0; }
+  .hero { padding: 100px 0 50px; }
+}
+@media (max-width: 480px) {
+  .feature-grid { grid-template-columns: 1fr; }
+  .data-preview { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="topbar">
-    <h1>暗流Pro</h1>
-    <div class="user-area" id="userArea">
-      <span id="userEmail" style="font-size:13px;color:#8b949e;"></span>
-      <span id="planBadge" class="price-tag" style="display:none;">Pro</span>
-      <button class="btn btn-primary" id="btnUpgrade" onclick="showPayModal()">订阅服务</button>
-      <button class="btn" id="btnLogin" onclick="showLoginModal()">登录</button>
-      <button class="btn" id="btnLogout" onclick="logout()" style="display:none;">退出</button>
+<div class="bg-glow"></div>
+<div class="toast" id="toast"></div>
+
+<!-- 瀵艰埅鏍?-->
+<nav>
+  <div class="nav-inner">
+    <div class="logo"><div class="logo-dot"></div>鏆楁祦Pro</div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn btn-outline btn-sm" onclick="showAuth()">鐧诲綍</button>
     </div>
   </div>
-  <div class="banner" id="banner" style="display:none;">
-    暗流Pro实战数据平台 · <a onclick="showPayModal()">立即订阅仅需 ￥9.9/月</a>
-    <span id="expireWarn" class="expire-warn"></span>
-  </div>
-  <div class="iframe-wrapper" id="iframeWrapper">
-    <div class="login-prompt" id="loginPrompt">
-      <h2>暗流Pro - 专业数字货币分析平台</h2>
-      <p>登录后即可查看实时多空数据、筹码分布、机构订单块等专业指标</p>
-      <button class="btn btn-primary" onclick="showLoginModal()">登录 / 注册</button>
+</nav>
+
+<!-- ====== 钀藉湴椤?====== -->
+<div id="landingPage">
+  <!-- Hero -->
+  <section class="hero container">
+    <div class="hero-badge"><span class="live-dot"></span> 鏈烘瀯绾ф暟鎹?路 瀹炴椂鏇存柊</div>
+    <h1>瀹炴椂澶氱┖鐩戞帶<br>鏈烘瀯绾у姞瀵嗘暟鎹潰鏉?/h1>
+    <p>30+ 涓撲笟鍒嗘瀽鎸囨爣 路 閾句笂鏁版嵁杩借釜 路 OB璁㈠崟鍧楄瘑鍒?路 绛圭爜鍒嗗竷鐑姏鍥?路 娓呯畻鐥涚偣瀹氫綅</p>
+    <div class="hero-cta">
+      <button class="btn btn-gold btn-lg" onclick="scrollToPricing()">绔嬪嵆璁㈤槄</button>
+      <button class="btn btn-outline btn-lg" onclick="showAuth()">鐧诲綍璐︽埛</button>
     </div>
-    <iframe id="mainFrame" style="display:none;" allow="clipboard-write"></iframe>
+
+    <!-- 鏁版嵁棰勮 -->
+    <div class="data-preview">
+      <div class="stat-card">
+        <div class="label">BTC/USDT</div>
+        <div class="value">$65,132</div>
+        <div class="change up">+3.24%</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">24h 澶氱┖姣?/div>
+        <div class="value">1.86</div>
+        <div class="change up">澶氬ご涓诲</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">閾句笂鍑€娴佸叆</div>
+        <div class="value">$284M</div>
+        <div class="change up">+12.5%</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">娓呯畻椋庨櫓鍖?/div>
+        <div class="value">$63,800</div>
+        <div class="change down">涓嬫柟鏀拺</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 鍗栫偣 -->
+  <section class="features container">
+    <div class="section-title">
+      <h2>鍏ぇ鏍稿績鍒嗘瀽妯″潡</h2>
+      <p>瑕嗙洊鏈烘瀯浜ゆ槗鍛樻棩甯镐娇鐢ㄧ殑鍏ㄩ儴鍏抽敭鎸囨爣</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">馃搳</div>
+        <h3>瀹炴椂澶氱┖鐩戞帶</h3>
+        <p>鍏ㄧ悆浜ゆ槗鎵€澶氱┖鎸佷粨姣斿疄鏃惰拷韪紝缁撳悎鎸佷粨閲忓彉鍖栭鍒よ秼鍔垮弽杞紝绮惧噯鎹曟崏甯傚満鎯呯华鎷愮偣銆?/p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">馃幆</div>
+        <h3>绛圭爜鍒嗗竷鍒嗘瀽</h3>
+        <p>閾句笂绛圭爜鎴愭湰鍖洪棿鍙鍖栵紝璇嗗埆涓诲姏鍚哥/娲惧彂鍖哄煙锛屽畾浣嶅叧閿敮鎾戜笌闃诲姏浣嶃€?/p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">馃彟</div>
+        <h3>鏈烘瀯璁㈠崟鍧?OB)</h3>
+        <p>璇嗗埆澶ч璁㈠崟鑱氶泦鍖哄煙锛岃拷韪仾鏄庨挶鍔ㄥ悜锛屾彁鍓嶅彂鐜版綔鍦ㄧ殑浠锋牸鍙嶈浆鐐广€?/p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">馃敆</div>
+        <h3>閾句笂鍑€娴佸叆</h3>
+        <p>鐩戞帶浜ゆ槗鎵€閽卞寘鍑€娴佸叆/娴佸嚭鏁版嵁锛屽ぇ棰濊浆璐﹀疄鏃堕璀︼紝娲炲療閾句笂璧勯噾鍔ㄥ悜銆?/p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">鈿?/div>
+        <h3>娓呯畻鐥涚偣瀹氫綅</h3>
+        <p>鍚堢害甯傚満娓呯畻浠锋牸鍒嗗竷鐑姏鍥撅紝绮惧噯瀹氫綅澶氬ご/绌哄ご娓呯畻瀵嗛泦鍖猴紝棰勫垽杞х┖/澶氭潃澶氥€?/p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">馃搱</div>
+        <h3>瓒嬪娍鎴愭湰甯?/h3>
+        <p>澶氬懆鏈烢MA/VWAP鍔ㄦ€佹垚鏈尯闂达紝缁撳悎鎴愪氦閲忓姞鏉冧环鏍硷紝绮惧噯鎶婃彙瓒嬪娍寤剁画涓庤浆鎶樸€?/p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 瀹氫环 -->
+  <section class="section container" id="pricingAnchor">
+    <div class="section-title">
+      <h2>閫夋嫨閫傚悎浣犵殑鏂规</h2>
+      <p>瑙ｉ攣鍏ㄩ儴 30+ 鏈烘瀯绾у垎鏋愭寚鏍囷紝寮€鍚笓涓氫氦鏄撲箣鏃?/p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <h3>7澶╀綋楠?/h3>
+        <div class="price"><span class="yen">楼</span>9.90</div>
+        <div class="period">涓€娆℃€т粯璐?路 7澶╂湁鏁?/div>
+        <ul>
+          <li>鍏ㄩ儴30+鍒嗘瀽鎸囨爣</li>
+          <li>澶氬竵绉嶅疄鏃跺垏鎹?/li>
+          <li>閾句笂鏁版嵁杩借釜</li>
+          <li>7澶╁畬鏁翠綋楠?/li>
+        </ul>
+        <button class="btn btn-primary btn-block" onclick="openPayModal('trial', '9.90', '7澶╀綋楠?)">绔嬪嵆浣撻獙</button>
+      </div>
+      <div class="pricing-card recommended">
+        <div class="pricing-badge">馃敟 鎺ㄨ崘</div>
+        <h3>鏈堝崱璁㈤槄</h3>
+        <div class="price"><span class="yen">楼</span>29.90</div>
+        <div class="period">鎸夋湀璁㈤槄 路 鑷姩缁垂</div>
+        <ul>
+          <li>鍏ㄩ儴30+鍒嗘瀽鎸囨爣</li>
+          <li>澶氬竵绉嶅疄鏃跺垏鎹?/li>
+          <li>閾句笂鏁版嵁杩借釜</li>
+          <li>涓撳睘鎺ㄥ箍閾炬帴</li>
+          <li>30%鎺ㄥ箍浣ｉ噾</li>
+        </ul>
+        <button class="btn btn-gold btn-block" onclick="openPayModal('monthly', '29.90', '鏈堝崱璁㈤槄')">绔嬪嵆璁㈤槄</button>
+      </div>
+    </div>
+
+    <!-- 淇′换鏍?-->
+    <div class="trust-bar" style="margin-top:40px;">
+      <div class="trust-item"><span class="trust-icon">馃敀</span> SSL 鍔犲瘑浼犺緭</div>
+      <div class="trust-item"><span class="trust-icon">馃攧</span> 7脳24 鏁版嵁鏇存柊</div>
+      <div class="trust-item"><span class="trust-icon">馃摗</span> 99.9% 鍙敤鎬?/div>
+      <div class="trust-item"><span class="trust-icon">馃挰</span> 瀹㈡湇 QQ: 2954126133</div>
+    </div>
+  </section>
+
+  <footer>
+    <p>漏 2024 鏆楁祦Pro 路 椋庨櫓鎻愮ず锛氭暟瀛楄揣甯佷氦鏄撳叿鏈夐珮椋庨櫓锛岃璋ㄦ厧鍐崇瓥銆傛湰骞冲彴鎻愪緵鏁版嵁鍙傝€冿紝涓嶆瀯鎴愭姇璧勫缓璁€?/p>
+  </footer>
+</div>
+
+<!-- ====== 鐧诲綍椤?====== -->
+<div class="auth-section" id="authSection">
+  <div class="auth-card">
+    <h2 id="authTitle">鐧诲綍</h2>
+    <p class="sub" id="authSubtitle">鐧诲綍鍚庤В閿佸叏閮ㄤ笓涓氬垎鏋愭寚鏍?/p>
+    <div class="error-msg" id="authError"></div>
+    <div class="input-group">
+      <label>閭</label>
+      <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <label>瀵嗙爜</label>
+      <input type="password" id="authPassword" placeholder="鑷冲皯6浣? autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-block" id="authBtn" onclick="handleAuth()">鐧诲綍</button>
+    <div class="auth-switch">
+      <span id="switchText">娌℃湁璐﹀彿锛?/span>
+      <a id="switchLink" onclick="toggleAuthMode()">鍘绘敞鍐?/a>
+    </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="loginModal">
-  <div class="modal">
-    <div class="tab-nav">
-      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">登录</button>
-      <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">注册</button>
+<!-- ====== 瀹氫环椤?宸茬櫥褰? ====== -->
+<div class="pricing-section container" id="pricingSection">
+  <div class="pricing-header">
+    <h2>鍗囩骇浣犵殑鏂规</h2>
+    <p>瑙ｉ攣鍏ㄩ儴 30+ 鏈烘瀯绾у垎鏋愭寚鏍?/p>
+  </div>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <h3>7澶╀綋楠?/h3>
+      <div class="price"><span class="yen">楼</span>9.90</div>
+      <div class="period">涓€娆℃€т粯璐?路 7澶╂湁鏁?/div>
+      <ul>
+        <li>鍏ㄩ儴30+鍒嗘瀽鎸囨爣</li>
+        <li>澶氬竵绉嶅疄鏃跺垏鎹?/li>
+        <li>閾句笂鏁版嵁杩借釜</li>
+        <li>7澶╁畬鏁翠綋楠?/li>
+      </ul>
+      <button class="btn btn-primary btn-block" onclick="openPayModal('trial', '9.90', '7澶╀綋楠?)">绔嬪嵆浣撻獙</button>
     </div>
-    <div class="tab-panel active" id="loginPanel">
-      <input type="email" id="loginEmail" placeholder="请输入邮箱" autocomplete="email">
-      <input type="password" id="loginPassword" placeholder="输入密码（6位以上）">
-      <button class="btn btn-primary" onclick="doLogin()">登录</button>
-      <div class="tip">没有账号？<a onclick="switchTab('register')">去注册</a></div>
+    <div class="pricing-card recommended">
+      <div class="pricing-badge">馃敟 鎺ㄨ崘</div>
+      <h3>鏈堝崱璁㈤槄</h3>
+      <div class="price"><span class="yen">楼</span>29.90</div>
+      <div class="period">鎸夋湀璁㈤槄 路 鑷姩缁垂</div>
+      <ul>
+        <li>鍏ㄩ儴30+鍒嗘瀽鎸囨爣</li>
+        <li>澶氬竵绉嶅疄鏃跺垏鎹?/li>
+        <li>閾句笂鏁版嵁杩借釜</li>
+        <li>涓撳睘鎺ㄥ箍閾炬帴</li>
+        <li>30%鎺ㄥ箍浣ｉ噾</li>
+      </ul>
+      <button class="btn btn-gold btn-block" onclick="openPayModal('monthly', '29.90', '鏈堝崱璁㈤槄')">绔嬪嵆璁㈤槄</button>
     </div>
-    <div class="tab-panel" id="registerPanel">
-      <input type="email" id="regEmail" placeholder="请输入邮箱" autocomplete="email">
-      <input type="password" id="regPassword" placeholder="输入密码（6位以上）">
-      <input type="password" id="regConfirmPassword" placeholder="确认密码">
-      <select id="securityQuestion">
-        <option value="">选择密保问题（注册时必填）</option>
-        <option value="你的出生城市是？">你的出生城市是？</option>
-        <option value="你的小学名称是？">你的小学名称是？</option>
-        <option value="你的宠物名字是？">你的宠物名字是？</option>
-        <option value="你最喜欢的电影是？">你最喜欢的电影是？</option>
-      </select>
-      <input type="text" id="securityAnswer" placeholder="密保答案">
-      <button class="btn btn-primary" onclick="doRegister()">注册</button>
-      <div class="tip">已有账号？<a onclick="switchTab('login')">去登录</a></div>
-    </div>
-    <button class="btn" onclick="closeLoginModal()" style="margin-top:8px;">取消</button>
   </div>
 </div>
 
+<!-- ====== 浠〃鐩?====== -->
+<div class="dashboard-section" id="dashboardSection">
+  <iframe id="dashboardFrame" src="" allowfullscreen></iframe>
+</div>
+
+<!-- ====== 鐢ㄦ埛涓績 ====== -->
+<div class="user-section container" id="userSection">
+  <h2>鎴戠殑璐︽埛</h2>
+  <div class="info-grid">
+    <div class="info-item">
+      <div class="label">褰撳墠鏂规</div>
+      <div class="value" id="infoPlan">--</div>
+    </div>
+    <div class="info-item">
+      <div class="label">鍒版湡鏃堕棿</div>
+      <div class="value" id="infoExpiry">--</div>
+    </div>
+    <div class="info-item">
+      <div class="label">绱浣ｉ噾</div>
+      <div class="value" id="infoCommission">楼0.00</div>
+    </div>
+    <div class="info-item">
+      <div class="label">鎴愬姛閭€璇?/div>
+      <div class="value" id="infoInvites">0浜?/div>
+    </div>
+  </div>
+  <div class="ref-box">
+    <h3>鎺ㄥ箍璧氶挶</h3>
+    <p>鍒嗕韩浣犵殑涓撳睘閾炬帴锛屼粬浜洪€氳繃閾炬帴娉ㄥ唽骞朵粯璐瑰悗锛屼綘鑾峰緱 <strong style="color:var(--accent);">30%浣ｉ噾</strong></p>
+    <div class="ref-link">
+      <span id="refLinkText">璇峰厛鐧诲綍鑾峰彇鎺ㄥ箍閾炬帴</span>
+      <span class="copy-btn" onclick="copyRefLink()">澶嶅埗</span>
+    </div>
+  </div>
+  <button class="btn btn-outline btn-sm logout-btn" onclick="handleLogout()">閫€鍑虹櫥褰?/button>
+</div>
+
+<!-- ====== 鏀粯寮圭獥 ====== -->
 <div class="modal-overlay" id="payModal">
-  <div class="modal" style="width:400px;max-height:90vh;overflow-y:auto;">
-    <h2>暗流Pro 订阅服务</h2>
+  <div class="modal" style="position:relative;">
+    <button class="modal-close" onclick="closePayModal()">&times;</button>
 
-    <!-- 步骤指示器 -->
-    <div class="step-indicator">
-      <div class="step active" id="step1">1. 选择方案</div>
-      <div class="step-arrow">→</div>
-      <div class="step" id="step2">2. 扫码支付</div>
-    </div>
-
-    <!-- 方案选择区 -->
-    <div id="planArea">
-      <div class="plan-box">
-        <div class="plan-header">
-          <span class="plan-name">7天体验</span>
-          <span class="plan-price">¥9.9</span>
-        </div>
-        <p class="plan-desc">解锁全部专业指标，7天到期</p>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-pay wechat" onclick="pay(1, '9.90')">微信 ¥9.9</button>
-          <button class="btn-pay alipay" onclick="pay(2, '9.90')">支付宝 ¥9.9</button>
-        </div>
+    <!-- 姝ラ鎸囩ず鍣?-->
+    <div class="step-indicator" id="stepIndicator">
+      <div class="step active" id="step1">
+        <div class="step-num">1</div>
+        <span class="step-label">閫夋嫨鏂规</span>
       </div>
-
-      <div class="plan-box">
-        <div class="plan-header">
-          <span class="plan-name">月卡订阅</span>
-          <span class="plan-price">¥29.9</span>
-        </div>
-        <p class="plan-desc">解锁全部专业指标，30天有效  ·  性价比之选</p>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-pay wechat" onclick="pay(1, '29.90')">微信 ¥29.9</button>
-          <button class="btn-pay alipay" onclick="pay(2, '29.90')">支付宝 ¥29.9</button>
-        </div>
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <input id="payPassword" type="password" placeholder="输入暗流账户密码" style="width:100%;padding:10px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px;" />
+      <div class="step-line" id="stepLine"></div>
+      <div class="step" id="step2">
+        <div class="step-num">2</div>
+        <span class="step-label">鎵爜鏀粯</span>
       </div>
     </div>
 
-    <!-- 二维码支付区 -->
-    <div id="qrArea" style="display:none;text-align:center;">
-      <div style="background:#ffffff;border-radius:12px;padding:16px;display:inline-block;margin-bottom:12px;">
-        <img id="qrImage" style="max-width:200px;display:block;" />
+    <h3 id="payTitle">鎵爜鏀粯</h3>
+    <p style="color:var(--muted);font-size:14px;" id="payAmount"></p>
+
+    <!-- 鏂规纭鍖猴紙姝ラ1鐢級 -->
+    <div id="payPlanConfirm" style="margin:12px 0;">
+      <div class="plan-select">
+        <div class="plan-option selected" id="planTrial" onclick="selectPayPlan('trial','9.90')">
+          <div class="plan-price">楼9.90</div>
+          <div class="plan-name">7澶╀綋楠?/div>
+        </div>
+        <div class="plan-option" id="planMonthly" onclick="selectPayPlan('monthly','29.90')">
+          <div class="plan-price">楼29.90</div>
+          <div class="plan-name">鏈堝崱 路 鎺ㄨ崘</div>
+        </div>
       </div>
-      <p id="qrStatus" style="color:#ffd666;font-size:13px;margin:8px 0;">等待扫码支付...</p>
-      <p id="qrExpire" style="color:#8b949e;font-size:11px;margin-bottom:8px;"></p>
-      <button class="btn btn-primary" id="btnPaid" onclick="checkPaymentManually()" style="display:none;margin-bottom:4px;">已完成支付，查询状态</button>
-      <button class="btn" id="btnBackPlan" onclick="backToPlans()" style="display:none;margin-bottom:8px;">返回重新选择</button>
-      <p id="qrRetry" style="color:#f85149;font-size:11px;display:none;"></p>
     </div>
 
-    <!-- 客服信息 -->
-    <div style="border-top:1px solid #21262d;margin-top:12px;padding-top:12px;text-align:center;">
-      <p style="color:#8b949e;font-size:12px;margin-bottom:4px;">支付遇到问题？联系客服</p>
-      <p style="color:#58a6ff;font-size:14px;font-weight:bold;">QQ: 2954126133</p>
+    <!-- 鏀粯鏂瑰紡 -->
+    <div class="pay-methods">
+      <button class="pay-method selected" id="payWx" onclick="switchPayMethod(1)">寰俊鏀粯</button>
+      <button class="pay-method" id="payAli" onclick="switchPayMethod(2)">鏀粯瀹?/button>
     </div>
 
-    <button class="btn-cancel" onclick="closePayModal()">关闭</button>
+    <!-- QR -->
+    <div id="qrWrapper" style="min-height:220px; display:flex; align-items:center; justify-content:center;">
+      <div class="spinner" id="qrSpinner"></div>
+    </div>
+    <div class="pay-status" id="payStatus"></div>
+
+    <!-- 鎿嶄綔鎸夐挳 -->
+    <div class="modal-btns" id="payButtons">
+      <button class="btn btn-primary btn-block" id="payCreateBtn" onclick="createOrder()">鐢熸垚鏀粯浜岀淮鐮?/button>
+    </div>
+    <div class="modal-btns" id="payRetryBtns" style="display:none;">
+      <button class="btn btn-outline btn-sm" onclick="createOrder()">閲嶆柊鐢熸垚</button>
+      <button class="btn btn-primary btn-sm" id="manualQueryBtn" style="display:none;" onclick="manualCheckOrder()">宸插畬鎴愭敮浠橈紝鏌ヨ鐘舵€?/button>
+    </div>
+
+    <div class="pay-hint">鎵爜鍚庤绛夊緟椤甸潰鑷姩璺宠浆锛岃鍕垮叧闂绐楀彛</div>
+    <div class="pay-contact">閬囧埌闂锛熻仈绯诲鏈?QQ: <a href="javascript:void(0)">2954126133</a></div>
   </div>
 </div>
 
-<script src="/js/supabase.min.js"></script>
-<!--
-Supabase subscriptions 表需新增字段:
-  darkflow_token TEXT  (可为 NULL)
-在 Supabase Dashboard → Table Editor → subscriptions → Add Column 中添加
--->
 <script>
+// ============ 閰嶇疆 ============
 const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
-const PROXY_BASE = '/api/proxy';
+const SUPABASE_ANON_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
+const DASHBOARD_URL = 'https://dash.hfd.fund/pro/';
 
-let sb = null;
+let supabase = null;
 let currentUser = null;
+let isRegisterMode = false;
+let payMethod = 1; // 1=寰俊 2=鏀粯瀹?let selectedPlan = 'trial';
+let selectedAmount = '9.90';
+let currentOrderNo = null;
+let pollTimer = null;
+let pollRetries = 0;
+const POLL_MAX = 120;
+const POLL_INTERVAL = 2000;
 
-// ========== UI Functions (always available, defined before any init) ==========
-function showLoginModal() {
-  document.getElementById('loginModal').classList.add('active');
-  switchTab('login');
+// ============ 鍒濆鍖?============
+async function init() {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) { currentUser = session.user; await checkSubscription(); }
+  else { showLanding(); }
+
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session) { currentUser = session.user; await checkSubscription(); }
+    else { currentUser = null; showLanding(); }
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref) localStorage.setItem('referrer', ref);
 }
-function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
-function showPayModal() {
+
+// ============ 椤甸潰鍒囨崲 ============
+function hideAll() {
+  document.getElementById('landingPage').style.display = 'none';
+  document.getElementById('authSection').classList.remove('active');
+  document.getElementById('pricingSection').classList.remove('active');
+  document.getElementById('dashboardSection').classList.remove('active');
+  document.getElementById('userSection').classList.remove('active');
+}
+
+function showLanding() {
+  hideAll();
+  document.getElementById('landingPage').style.display = 'block';
+  document.getElementById('navActions').innerHTML = '<button class="btn btn-primary btn-sm" onclick="showAuth()">鐧诲綍</button>';
+}
+
+function showAuth() {
+  hideAll();
+  document.getElementById('authSection').classList.add('active');
+  resetAuthForm();
+}
+
+function showPricing() {
+  hideAll();
+  document.getElementById('pricingSection').classList.add('active');
+}
+
+function showDashboard() {
+  hideAll();
+  document.getElementById('dashboardSection').classList.add('active');
+  document.getElementById('dashboardFrame').src = DASHBOARD_URL;
+}
+
+function showUser() {
+  hideAll();
+  document.getElementById('userSection').classList.add('active');
+  loadUserInfo();
+}
+
+function scrollToPricing() { document.getElementById('pricingAnchor').scrollIntoView({ behavior: 'smooth' }); }
+
+async function checkSubscription() {
+  if (!currentUser) return showLanding();
+  const { data } = await supabase.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+  if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
+    updateNavForUser();
+    showDashboard();
+  } else {
+    updateNavForUser();
+    showPricing();
+  }
+}
+
+function updateNavForUser() {
+  if (!currentUser) return;
+  const initial = currentUser.email.charAt(0).toUpperCase();
+  document.getElementById('navActions').innerHTML = `
+    <button class="btn btn-outline btn-sm" onclick="showPricing()">鍗囩骇</button>
+    <button class="btn btn-outline btn-sm" onclick="showDashboard()">浠〃鐩?/button>
+    <div class="avatar-circle" onclick="showUser()" title="璐︽埛涓績">${initial}</div>
+  `;
+}
+
+// ============ 璁よ瘉 ============
+function resetAuthForm() {
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authError').style.display = 'none';
+  isRegisterMode = false; updateAuthUI();
+}
+function toggleAuthMode() {
+  isRegisterMode = !isRegisterMode;
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authError').style.display = 'none';
+  updateAuthUI();
+}
+function updateAuthUI() {
+  if (isRegisterMode) {
+    document.getElementById('authTitle').textContent = '娉ㄥ唽';
+    document.getElementById('authSubtitle').textContent = '娉ㄥ唽鍚庡嵆鍙闃匬ro鏂规';
+    document.getElementById('authBtn').textContent = '娉ㄥ唽';
+    document.getElementById('switchText').textContent = '宸叉湁璐﹀彿锛?;
+    document.getElementById('switchLink').textContent = '鍘荤櫥褰?;
+  } else {
+    document.getElementById('authTitle').textContent = '鐧诲綍';
+    document.getElementById('authSubtitle').textContent = '鐧诲綍鍚庤В閿佸叏閮ㄤ笓涓氬垎鏋愭寚鏍?;
+    document.getElementById('authBtn').textContent = '鐧诲綍';
+    document.getElementById('switchText').textContent = '娌℃湁璐﹀彿锛?;
+    document.getElementById('switchLink').textContent = '鍘绘敞鍐?;
+  }
+}
+
+async function handleAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errorEl = document.getElementById('authError');
+  if (!email || !password) { errorEl.textContent = '璇峰～鍐欓偖绠卞拰瀵嗙爜'; errorEl.style.display = 'block'; return; }
+  if (password.length < 6) { errorEl.textContent = '瀵嗙爜鑷冲皯6浣?; errorEl.style.display = 'block'; return; }
+  errorEl.style.display = 'none';
+
+  let result;
+  if (isRegisterMode) { result = await supabase.auth.signUp({ email, password }); }
+  else { result = await supabase.auth.signInWithPassword({ email, password }); }
+
+  if (result.error) { errorEl.textContent = result.error.message; errorEl.style.display = 'block'; return; }
+
+  if (isRegisterMode && result.data.user) {
+    const referrer = localStorage.getItem('referrer');
+    if (referrer) {
+      await supabase.from('referrals').insert({ referrer_id: referrer, referred_id: result.data.user.id });
+    }
+    await supabase.from('subscriptions').insert({ user_id: result.data.user.id, plan: 'free', expires_at: new Date().toISOString() });
+  }
+  currentUser = result.data.user;
+  await checkSubscription();
+}
+
+async function handleLogout() {
+  await supabase.auth.signOut();
+  currentUser = null;
+  showLanding();
+}
+
+// ============ 鏀粯寮圭獥 ============
+function openPayModal(plan, amount, name) {
+  if (!currentUser) { showAuth(); showToast('璇峰厛鐧诲綍'); return; }
+  selectedPlan = plan; selectedAmount = amount;
+  document.getElementById('payTitle').textContent = name;
+  document.getElementById('payAmount').textContent = `鏀粯閲戦锛毬?{amount}`;
+  payMethod = 1;
+
+  // 楂樹寒閫変腑鏂规
+  document.getElementById('planTrial').classList.toggle('selected', plan === 'trial');
+  document.getElementById('planMonthly').classList.toggle('selected', plan === 'monthly');
+
+  // 閲嶇疆姝ラ
+  setStep(1);
+  document.getElementById('payPlanConfirm').style.display = 'block';
+  document.getElementById('payWx').classList.add('selected');
+  document.getElementById('payAli').classList.remove('selected');
+  document.getElementById('qrWrapper').innerHTML = '';
+  document.getElementById('payStatus').textContent = '';
+  document.getElementById('payStatus').className = 'pay-status';
+  document.getElementById('payButtons').style.display = 'block';
+  document.getElementById('payRetryBtns').style.display = 'none';
+  document.getElementById('payCreateBtn').style.display = 'block';
+  document.getElementById('manualQueryBtn').style.display = 'none';
+
   document.getElementById('payModal').classList.add('active');
-  resetPayModal();
 }
-function resetPayModal() {
-  document.getElementById('payPassword').value = '';
-  document.getElementById('planArea').style.display = 'block';
-  document.getElementById('qrArea').style.display = 'none';
-  document.getElementById('qrImage').src = '';
-  document.getElementById('qrStatus').textContent = '等待扫码支付...';
-  document.getElementById('qrStatus').style.color = '#ffd666';
-  document.getElementById('qrExpire').textContent = '';
-  document.getElementById('btnPaid').style.display = 'none';
-  document.getElementById('btnBackPlan').style.display = 'none';
-  document.getElementById('qrRetry').style.display = 'none';
-  document.getElementById('step1').className = 'step active';
-  document.getElementById('step2').className = 'step';
-  document.querySelectorAll('.btn-pay').forEach(b => b.style.display = '');
-  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
-  currentOrderNo = null;
-}
+
 function closePayModal() {
   document.getElementById('payModal').classList.remove('active');
-  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
-}
-function backToPlans() {
-  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
-  resetPayModal();
-}
-function showQrStep() {
-  document.getElementById('planArea').style.display = 'none';
-  document.getElementById('qrArea').style.display = 'block';
-  document.getElementById('step1').className = 'step done';
-  document.getElementById('step2').className = 'step active';
-  // 3秒后显示手动查询按钮
-  setTimeout(() => {
-    if (document.getElementById('qrArea').style.display !== 'none') {
-      document.getElementById('btnPaid').style.display = 'inline-block';
-      document.getElementById('btnBackPlan').style.display = 'block';
-    }
-  }, 3000);
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
-// ========== Supabase Initialization (safe, won't block script) ==========
-(function() {
-  try {
-    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      init();
-    } else {
-      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
-      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
-      document.getElementById('btnLogin').disabled = true;
-    }
-  } catch (e) {
-    console.error('Supabase 初始化失败:', e);
-    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
-    document.getElementById('btnLogin').disabled = true;
-  }
-})();
-
-// ========== Helper ==========
-function sbReady() {
-  if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
-  return true;
+function selectPayPlan(plan, amount) {
+  selectedPlan = plan; selectedAmount = amount;
+  document.getElementById('planTrial').classList.toggle('selected', plan === 'trial');
+  document.getElementById('planMonthly').classList.toggle('selected', plan === 'monthly');
+  document.getElementById('payTitle').textContent = plan === 'trial' ? '7澶╀綋楠? : '鏈堝崱璁㈤槄';
+  document.getElementById('payAmount').textContent = `鏀粯閲戦锛毬?{amount}`;
 }
 
-// ========== Business Logic ==========
-async function init() {
-  if (!sb) return;
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      onLogin();
-    }
-  } catch (e) {
-    console.error('会话恢复失败:', e);
+function switchPayMethod(method) {
+  payMethod = method;
+  document.getElementById('payWx').classList.toggle('selected', method === 1);
+  document.getElementById('payAli').classList.toggle('selected', method === 2);
+}
+
+function setStep(step) {
+  const s1 = document.getElementById('step1'), s2 = document.getElementById('step2');
+  const line = document.getElementById('stepLine');
+  if (step === 1) {
+    s1.className = 'step active'; s2.className = 'step'; line.className = 'step-line';
+  } else {
+    s1.className = 'step completed'; s2.className = 'step active'; line.className = 'step-line done';
   }
 }
 
-function switchTab(tab) {
-  const isLogin = tab === 'login';
-  document.getElementById('tabLogin').classList.toggle('active', isLogin);
-  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
-  document.getElementById('loginPanel').classList.toggle('active', isLogin);
-  document.getElementById('registerPanel').classList.toggle('active', !isLogin);
-  clearLoginForms();
-}
-
-function clearLoginForms() {
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('regEmail').value = '';
-  document.getElementById('regPassword').value = '';
-  document.getElementById('regConfirmPassword').value = '';
-  document.getElementById('securityQuestion').value = '';
-  document.getElementById('securityAnswer').value = '';
-}
-
-async function doLogin() {
-  if (!sbReady()) return;
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  if (!email || !password) return alert('请填写邮箱和密码');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
-  if (password.length < 6) return alert('密码至少6位');
-
-  try {
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) return alert('登录失败: ' + error.message);
-    currentUser = data.user;
-    onLogin();
-  } catch (e) {
-    console.error('登录异常:', e);
-    alert('操作失败，请重试');
-  }
-}
-
-async function doRegister() {
-  if (!sbReady()) return;
-  const email = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const confirmPassword = document.getElementById('regConfirmPassword').value;
-  const securityQuestion = document.getElementById('securityQuestion').value;
-  const securityAnswer = document.getElementById('securityAnswer').value.trim();
-
-  if (!email || !password || !confirmPassword) return alert('请填写所有必填项');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
-  if (password.length < 6) return alert('密码至少6位');
-  if (password !== confirmPassword) return alert('两次输入的密码不一致');
-  if (!securityQuestion || !securityAnswer) return alert('请选择密保问题并填写答案');
-
-  try {
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if (error) return alert('注册失败: ' + error.message);
-
-    // 同步注册暗流 dash.hfd.fund 账户
-    const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
-    let darkflowWarning = '';
-    try {
-      const dfResp = await fetch('/api/register-darkflow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(darkflowBody)
-      });
-      const dfData = await dfResp.json();
-      if (!dfData.darkflow || !dfData.darkflow.success) {
-        const reason = (dfData.darkflow && dfData.darkflow.data && dfData.darkflow.data.message)
-          || (dfData.darkflow && dfData.darkflow.error)
-          || (dfData.darkflow ? 'HTTP ' + dfData.darkflow.status : '无响应');
-        console.error('[darkflow] 同步失败详情:', JSON.stringify(dfData.darkflow));
-        darkflowWarning = '\n\n暗流同步失败: ' + reason + '\n（不影响本站使用，可登录后重试）';
-      }
-    } catch (e) {
-      console.error('[darkflow] 同步异常:', e.message);
-      darkflowWarning = '\n\n暗流同步失败: ' + e.message + '\n（不影响本站使用，可登录后重试）';
-    }
-
-    if (data.session) {
-      currentUser = data.user;
-      onLogin();
-      return;
-    }
-    if (data.user) {
-      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）' + darkflowWarning);
-      closeLoginModal();
-      return;
-    }
-    alert('注册请求已提交，请查看邮箱确认');
-    closeLoginModal();
-  } catch (e) {
-    console.error('注册异常:', e);
-    alert('操作失败，请重试');
-  }
-}
-
-async function onLogin() {
-  if (!sb) return;
-  document.getElementById('loginPrompt').style.display = 'none';
-  document.getElementById('mainFrame').style.display = 'block';
-  document.getElementById('btnLogin').style.display = 'none';
-  document.getElementById('btnLogout').style.display = 'inline-block';
-  document.getElementById('btnUpgrade').style.display = 'inline-block';
-  document.getElementById('userEmail').textContent = currentUser.email;
-  document.getElementById('banner').style.display = 'block';
-  closeLoginModal();
-
-  try {
-    const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
-    if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
-      document.getElementById('planBadge').style.display = 'inline';
-      document.getElementById('btnUpgrade').style.display = 'none';
-      document.getElementById('banner').style.display = 'none';
-      loadFrame();
-    }
-  } catch (e) {
-    console.error('订阅查询失败:', e);
-  }
-}
-
-function loadFrame() {
-  const iframe = document.getElementById('mainFrame');
-  iframe.src = PROXY_BASE + '/pro/';
-}
-
-async function logout() {
-  if (!sbReady()) return;
-  try {
-    await sb.auth.signOut();
-  } catch (e) {
-    console.error('登出失败:', e);
-  }
-  currentUser = null;
-  document.getElementById('loginPrompt').style.display = 'block';
-  document.getElementById('mainFrame').style.display = 'none';
-  document.getElementById('mainFrame').src = '';
-  document.getElementById('btnLogin').style.display = 'inline-block';
-  document.getElementById('btnLogout').style.display = 'none';
-  document.getElementById('btnUpgrade').style.display = 'none';
-  document.getElementById('planBadge').style.display = 'none';
-  document.getElementById('banner').style.display = 'none';
-  document.getElementById('userEmail').textContent = '';
-}
-
-// ========== Payment Flow ==========
-let pollingTimer = null;
-let currentOrderNo = null;
-
-async function pay(payType, money) {
-  if (!currentUser) return alert('请先登录');
-  const password = document.getElementById('payPassword').value.trim();
-  if (!password) return alert('请输入暗流账户密码');
-  if (password.length < 6) return alert('密码至少6位');
-
-  showQrStep();
-  document.getElementById('qrStatus').textContent = '正在生成支付二维码...';
+async function createOrder() {
+  setStep(2);
+  document.getElementById('payPlanConfirm').style.display = 'none';
+  document.getElementById('payButtons').style.display = 'none';
+  document.getElementById('payCreateBtn').style.display = 'none';
+  document.getElementById('qrWrapper').innerHTML = '<div class="spinner"></div>';
+  document.getElementById('payStatus').textContent = '姝ｅ湪鍒涘缓鏀粯璁㈠崟...';
+  document.getElementById('payStatus').className = 'pay-status';
+  document.getElementById('payRetryBtns').style.display = 'none';
 
   try {
     const resp = await fetch('/api/pay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: currentUser.id, pay_type: payType, password, money })
+      body: JSON.stringify({ user_id: currentUser.id, pay_type: payMethod, money: selectedAmount })
     });
-    const result = await resp.json();
+    const data = await resp.json();
 
-    if (result.error) {
-      document.getElementById('qrStatus').textContent = '创建订单失败: ' + result.error;
-      document.getElementById('qrStatus').style.color = '#f85149';
-      document.getElementById('btnBackPlan').style.display = 'block';
+    if (data.error) {
+      document.getElementById('qrWrapper').innerHTML = `<p style="color:var(--danger);font-size:14px;">${data.error}</p>`;
+      document.getElementById('payStatus').textContent = data.xdd_msg || '璁㈠崟鍒涘缓澶辫触';
+      document.getElementById('payStatus').className = 'pay-status';
+      document.getElementById('payRetryBtns').style.display = 'flex';
+      document.getElementById('manualQueryBtn').style.display = 'none';
       return;
     }
 
-    currentOrderNo = result.order_no;
+    currentOrderNo = data.order_no;
+    const qrSrc = data.qr_img ? `data:image/png;base64,${data.qr_img}` : data.qr;
+    document.getElementById('qrWrapper').innerHTML = `
+      <div class="qr-area">
+        <img src="${qrSrc}" alt="鏀粯浜岀淮鐮? onerror="this.parentElement.innerHTML='<p style=color:var(--danger);>浜岀淮鐮佸姞杞藉け璐ワ紝璇烽噸璇?/p>';document.getElementById('payRetryBtns').style.display='flex';">
+        <div class="qr-price"><span class="yen-sign">楼</span>${data.money || selectedAmount}</div>
+      </div>`;
+    document.getElementById('payStatus').textContent = '璇蜂娇鐢ㄥ搴擜pp鎵爜鏀粯';
+    document.getElementById('payStatus').className = 'pay-status';
+    document.getElementById('payRetryBtns').style.display = 'flex';
 
-    if (result.qr_img && result.qr_img.length > 100) {
-      document.getElementById('qrImage').src = result.qr_img;
-      // QR 加载失败重试
-      let qrRetries = 0;
-      document.getElementById('qrImage').onerror = function() {
-        qrRetries++;
-        if (qrRetries <= 3) {
-          document.getElementById('qrRetry').style.display = 'block';
-          document.getElementById('qrRetry').textContent = '二维码加载失败，正在重试(' + qrRetries + '/3)...';
-          setTimeout(() => { document.getElementById('qrImage').src = result.qr_img + '&t=' + Date.now(); }, 1000);
-        } else {
-          document.getElementById('qrRetry').textContent = '二维码加载失败，请使用支付链接或联系客服 QQ: 2954126133';
-        }
-      };
-      document.getElementById('qrImage').onload = function() {
-        document.getElementById('qrRetry').style.display = 'none';
-      };
-    }
-    document.getElementById('qrStatus').textContent = '请扫码支付 ￥' + (result.realmoney || result.money || money);
-    if (result.expires_in) {
-      document.getElementById('qrExpire').textContent = '有效期至 ' + result.expires_in;
-    }
+    // 3绉掑悗鏄剧ず鎵嬪姩鏌ュ崟鎸夐挳
+    setTimeout(() => { document.getElementById('manualQueryBtn').style.display = 'inline-flex'; }, 3000);
 
-    startPolling(result.order_no);
+    // 寮€濮嬭疆璇?    startPolling();
   } catch (e) {
-    document.getElementById('qrStatus').textContent = '网络错误: ' + e.message;
-    document.getElementById('qrStatus').style.color = '#f85149';
+    document.getElementById('qrWrapper').innerHTML = `<p style="color:var(--danger);font-size:14px;">缃戠粶閿欒锛?{e.message}</p>`;
+    document.getElementById('payStatus').textContent = '';
+    document.getElementById('payRetryBtns').style.display = 'flex';
+    document.getElementById('manualQueryBtn').style.display = 'none';
   }
 }
 
-async function checkPaymentManually() {
-  if (!currentOrderNo) return alert('没有待查询的订单');
-  document.getElementById('qrStatus').textContent = '正在查询支付状态...';
-  document.getElementById('qrStatus').style.color = '#ffd666';
-  try {
-    const resp = await fetch('/api/query?order_no=' + currentOrderNo);
-    const data = await resp.json();
-    if (data.status === 'success' || data.status === 'payed') {
-      handlePaymentSuccess();
-    } else {
-      document.getElementById('qrStatus').textContent = '暂未检测到支付，请确认是否已完成扫码付款';
-      document.getElementById('qrStatus').style.color = '#f85149';
-      setTimeout(() => {
-        document.getElementById('qrStatus').textContent = '请扫码支付';
-        document.getElementById('qrStatus').style.color = '#ffd666';
-      }, 2000);
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollRetries = 0;
+  pollTimer = setInterval(async () => {
+    pollRetries++;
+    if (pollRetries > POLL_MAX) {
+      clearInterval(pollTimer); pollTimer = null;
+      document.getElementById('payStatus').textContent = '鏀粯纭瓒呮椂锛岃鐐瑰嚮涓嬫柟鎸夐挳鎵嬪姩鏌ヨ';
+      document.getElementById('payStatus').className = 'pay-status';
+      document.getElementById('manualQueryBtn').style.display = 'inline-flex';
+      return;
     }
-  } catch (e) {
-    document.getElementById('qrStatus').textContent = '查询失败: ' + e.message;
-    document.getElementById('qrStatus').style.color = '#f85149';
-  }
-}
-
-function handlePaymentSuccess() {
-  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
-  document.getElementById('qrStatus').textContent = '支付成功！正在跳转暗流Pro...';
-  document.getElementById('qrStatus').style.color = '#3fb950';
-  document.getElementById('btnPaid').style.display = 'none';
-  document.getElementById('btnBackPlan').style.display = 'none';
-
-  setTimeout(() => {
-    closePayModal();
-    document.getElementById('planBadge').style.display = 'inline';
-    document.getElementById('btnUpgrade').style.display = 'none';
-    document.getElementById('banner').style.display = 'none';
-    loadFrame();
-  }, 1200);
-}
-
-function startPolling(orderNo) {
-  if (pollingTimer) clearInterval(pollingTimer);
-  let pollCount = 0;
-  pollingTimer = setInterval(async () => {
-    pollCount++;
     try {
-      const resp = await fetch('/api/query?order_no=' + orderNo);
+      const resp = await fetch(`/api/notify?check=${currentOrderNo}&user_id=${currentUser.id}`);
       const data = await resp.json();
-      if (data.status === 'success' || data.status === 'payed') {
-        handlePaymentSuccess();
-        return;
-      } else if (data.status === 'expire') {
-        clearInterval(pollingTimer);
-        pollingTimer = null;
-        document.getElementById('qrStatus').textContent = '二维码已过期，请重新选择方案';
-        document.getElementById('qrStatus').style.color = '#f85149';
-        document.getElementById('btnPaid').style.display = 'none';
-        document.getElementById('btnBackPlan').style.display = 'block';
+      if (data.paid) {
+        clearInterval(pollTimer); pollTimer = null;
+        onPaymentSuccess();
       }
-      if (pollCount > 120) {
-        clearInterval(pollingTimer);
-        pollingTimer = null;
-        document.getElementById('qrStatus').textContent = '支付超时，请重新操作';
-        document.getElementById('qrStatus').style.color = '#f85149';
-        document.getElementById('btnPaid').style.display = 'none';
-        document.getElementById('btnBackPlan').style.display = 'block';
-      }
-    } catch (e) {
-      console.error('轮询失败:', e);
-    }
-  }, 2000);
+    } catch (e) { /* ignore */ }
+  }, POLL_INTERVAL);
 }
+
+async function manualCheckOrder() {
+  document.getElementById('payStatus').textContent = '姝ｅ湪鏌ヨ鏀粯鐘舵€?..';
+  try {
+    const resp = await fetch(`/api/notify?check=${currentOrderNo}&user_id=${currentUser.id}`);
+    const data = await resp.json();
+    if (data.paid) {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      onPaymentSuccess();
+    } else {
+      document.getElementById('payStatus').textContent = '鏆傛湭妫€娴嬪埌鏀粯璁板綍锛岃纭宸插畬鎴愭敮浠樺悗鍐嶈瘯';
+      document.getElementById('payStatus').className = 'pay-status';
+    }
+  } catch (e) {
+    document.getElementById('payStatus').textContent = '鏌ヨ澶辫触锛岃閲嶈瘯';
+  }
+}
+
+function onPaymentSuccess() {
+  document.getElementById('qrWrapper').innerHTML = '<div class="success-check">鉁?/div>';
+  document.getElementById('payStatus').textContent = '鏀粯鎴愬姛锛佹鍦ㄨ烦杞?..';
+  document.getElementById('payStatus').className = 'pay-status success';
+  document.getElementById('payRetryBtns').style.display = 'none';
+  setTimeout(async () => {
+    closePayModal();
+    await checkSubscription();
+  }, 1500);
+}
+
+// ============ 鐢ㄦ埛涓績 ============
+async function loadUserInfo() {
+  if (!currentUser) return;
+  const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+  document.getElementById('infoPlan').textContent = sub ? sub.plan : '鍏嶈垂';
+  if (sub && sub.expires_at) {
+    document.getElementById('infoExpiry').textContent = new Date(sub.expires_at).toLocaleDateString('zh-CN');
+  } else { document.getElementById('infoExpiry').textContent = '--'; }
+
+  const { data: commissions } = await supabase.from('commissions').select('amount').eq('referrer_id', currentUser.id);
+  const total = commissions ? commissions.reduce((s, c) => s + c.amount, 0) : 0;
+  document.getElementById('infoCommission').textContent = '楼' + total.toFixed(2);
+  document.getElementById('infoInvites').textContent = (commissions ? commissions.length : 0) + '浜?;
+  document.getElementById('refLinkText').textContent = `${window.location.origin}/?ref=${currentUser.id}`;
+}
+
+async function copyRefLink() {
+  const refLink = `${window.location.origin}/?ref=${currentUser.id}`;
+  try { await navigator.clipboard.writeText(refLink); showToast('鎺ㄥ箍閾炬帴宸插鍒?); }
+  catch { showToast('澶嶅埗澶辫触锛岃鎵嬪姩澶嶅埗'); }
+}
+
+// ============ Toast ============
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  t.className = 'toast' + (type === 'error' ? ' error' : '');
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
+init();
 </script>
 </body>
 </html>
