@@ -1,21 +1,455 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>暗流 Pro</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暗流Pro</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0e27;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-.header{padding:12px 24px;background:linear-gradient(135deg,#1a1f4a,#0d1137);display:flex;align-items:center;justify-content:space-between}
-.header h1{font-size:18px;background:linear-gradient(90deg,#7c8aff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.status{font-size:12px;color:#4ade80;display:flex;align-items:center;gap:6px}
-.status::before{content:'';display:inline-block;width:8px;height:8px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-#mainFrame{width:100%;height:calc(100vh - 52px);border:none;display:block}
+  html { height: 100%; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+  .container { display: flex; flex-direction: column; height: 100%; min-height: 100vh; }
+  .topbar { background: #161b22; border-bottom: 1px solid #30363d; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .topbar h1 { font-size: 18px; color: #58a6ff; }
+  .user-area { display: flex; align-items: center; gap: 12px; }
+  .btn { padding: 6px 16px; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 13px; }
+  .btn:hover { background: #30363d; }
+  .btn-primary { background: #238636; border-color: #2ea043; color: #fff; }
+  .btn-primary:hover { background: #2ea043; }
+  .price-tag { background: #1f6feb; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; width: 380px; }
+  .modal h2 { font-size: 20px; margin-bottom: 16px; color: #f0f6fc; }
+  .modal input { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; }
+  .modal select { width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 14px; margin-bottom: 12px; cursor: pointer; }
+  .modal .btn { width: 100%; margin-top: 8px; }
+  .modal .tip { font-size: 12px; color: #8b949e; margin-top: 12px; text-align: center; }
+  .iframe-wrapper { flex: 1; position: relative; display: none; }
+  .iframe-wrapper iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; }
+  .login-prompt { text-align: center; padding: 80px 20px; }
+  .login-prompt h2 { font-size: 24px; margin-bottom: 12px; }
+  .login-prompt p { color: #8b949e; margin-bottom: 24px; }
+  .banner { background: linear-gradient(135deg, #1f6feb, #238636); padding: 12px 20px; text-align: center; font-size: 14px; color: #fff; }
+  .banner a { color: #ffd666; text-decoration: underline; cursor: pointer; }
+  .expire-warn { color: #f85149; font-size: 12px; margin-left: 8px; }
+  .tab-nav { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 16px; }
+  .tab-btn { flex: 1; padding: 8px 16px; border: none; background: transparent; color: #8b949e; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .modal .tip a { color: #58a6ff; cursor: pointer; text-decoration: none; }
+  .modal .tip a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
-<div class="header"><h1>暗流 Pro</h1><span class="status">直连数据源</span></div>
-<iframe id="mainFrame" src="https://dash.hfd.fund/pro"></iframe>
+<div class="container">
+  <div class="topbar">
+    <h1>暗流Pro</h1>
+    <div class="user-area" id="userArea">
+      <span id="userEmail" style="font-size:13px;color:#8b949e;"></span>
+      <span id="planBadge" class="price-tag" style="display:none;">Pro</span>
+      <button class="btn btn-primary" id="btnUpgrade" onclick="showPayModal()">升级会员 ￥9.9/月</button>
+      <button class="btn" id="btnLogin" onclick="showLoginModal()">登录</button>
+      <button class="btn" id="btnLogout" onclick="logout()" style="display:none;">退出</button>
+    </div>
+  </div>
+  <div class="banner" id="banner" style="display:none;">
+    暗流Pro实战数据平台 · <a onclick="showPayModal()">立即订阅仅需 ￥9.9/月</a>
+    <span id="expireWarn" class="expire-warn"></span>
+  </div>
+  <div class="iframe-wrapper" id="iframeWrapper">
+    <div class="login-prompt" id="loginPrompt">
+      <h2>暗流Pro - 专业数字货币分析平台</h2>
+      <p>登录后即可查看实时多空数据、筹码分布、机构订单块等专业指标</p>
+      <button class="btn btn-primary" onclick="showLoginModal()">登录 / 注册</button>
+    </div>
+    <iframe id="mainFrame" style="display:none;" allow="clipboard-write"></iframe>
+  </div>
+</div>
+
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">登录</button>
+      <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">注册</button>
+    </div>
+    <div class="tab-panel active" id="loginPanel">
+      <input type="email" id="loginEmail" placeholder="请输入邮箱" autocomplete="email">
+      <input type="password" id="loginPassword" placeholder="输入密码（6位以上）">
+      <button class="btn btn-primary" onclick="doLogin()">登录</button>
+      <div class="tip">没有账号？<a onclick="switchTab('register')">去注册</a></div>
+    </div>
+    <div class="tab-panel" id="registerPanel">
+      <input type="email" id="regEmail" placeholder="请输入邮箱" autocomplete="email">
+      <input type="password" id="regPassword" placeholder="输入密码（6位以上）">
+      <input type="password" id="regConfirmPassword" placeholder="确认密码">
+      <select id="securityQuestion">
+        <option value="">选择密保问题（注册时必填）</option>
+        <option value="你的出生城市是？">你的出生城市是？</option>
+        <option value="你的小学名称是？">你的小学名称是？</option>
+        <option value="你的宠物名字是？">你的宠物名字是？</option>
+        <option value="你最喜欢的电影是？">你最喜欢的电影是？</option>
+      </select>
+      <input type="text" id="securityAnswer" placeholder="密保答案">
+      <button class="btn btn-primary" onclick="doRegister()">注册</button>
+      <div class="tip">已有账号？<a onclick="switchTab('login')">去登录</a></div>
+    </div>
+    <button class="btn" onclick="closeLoginModal()" style="margin-top:8px;">取消</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="payModal">
+  <div class="modal" style="width:420px;">
+    <h2>升级暗流Pro会员</h2>
+    <!-- 方案选择 -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <div class="plan-card active" id="plan9" onclick="selectPlan('9.90','7天体验')"
+           style="flex:1;border:2px solid #58a6ff;border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:border-color 0.2s;">
+        <div style="font-size:18px;font-weight:bold;color:#f0f6fc;">￥9.90</div>
+        <div style="font-size:12px;color:#8b949e;">7天体验</div>
+      </div>
+      <div class="plan-card" id="plan29" onclick="selectPlan('29.90','月卡')"
+           style="flex:1;border:2px solid #30363d;border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:border-color 0.2s;">
+        <div style="font-size:18px;font-weight:bold;color:#f0f6fc;">￥29.90</div>
+        <div style="font-size:12px;color:#8b949e;">月卡</div>
+      </div>
+    </div>
+    <!-- 支付方式选择 -->
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <button class="btn btn-primary" id="payMethodWechat" onclick="selectPayMethod(1)" style="flex:1;">微信支付</button>
+      <button class="btn" id="payMethodAlipay" onclick="selectPayMethod(2)" style="flex:1;">支付宝</button>
+    </div>
+    <!-- 状态区域 -->
+    <div id="qrLoading" style="display:none; text-align:center; padding:20px; color:#8b949e;">正在获取支付二维码...</div>
+    <div id="qrContainer" style="display:none; text-align:center; margin:12px 0;">
+      <img id="qrImage" style="max-width:220px; max-height:220px; border-radius:8px;" alt="支付二维码" />
+      <p style="color:#8b949e;font-size:12px;margin-top:8px;">请用对应App扫码支付</p>
+    </div>
+    <div id="qrError" style="display:none; text-align:center; padding:16px; color:#f85149;font-size:13px;"></div>
+    <button class="btn btn-primary" id="btnPayNow" onclick="doPay()" style="width:100%;">立即支付</button>
+    <button class="btn" onclick="closePayModal()" style="margin-top:8px;width:100%;">取消</button>
+    <div class="tip">支付成功后自动开通，有效期见所选方案</div>
+  </div>
+</div>
+
+<script src="/js/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = 'https://ppsmljichazzznbaaaxx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vJj94C_y0WpsHDo0nBfliA_yoXN_3PC';
+const PROXY_BASE = '/api/proxy';
+
+let sb = null;
+let currentUser = null;
+
+// ========== UI Functions (always available, defined before any init) ==========
+function showLoginModal() {
+  document.getElementById('loginModal').classList.add('active');
+  switchTab('login');
+}
+function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+function showPayModal() {
+  document.getElementById('payModal').classList.add('active');
+  // 重置为默认方案
+  selectPlan('9.90', '7天体验');
+  selectPayMethod(1);
+  hideQr();
+  document.getElementById('btnPayNow').disabled = false;
+}
+
+// ========== Supabase Initialization (safe, won't block script) ==========
+(function() {
+  try {
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      init();
+    } else {
+      console.warn('Supabase SDK 未加载，登录/注册功能暂不可用');
+      document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+      document.getElementById('btnLogin').disabled = true;
+    }
+  } catch (e) {
+    console.error('Supabase 初始化失败:', e);
+    document.getElementById('btnLogin').textContent = '登录（服务暂不可用）';
+    document.getElementById('btnLogin').disabled = true;
+  }
+})();
+
+// ========== Helper ==========
+function sbReady() {
+  if (!sb) { alert('服务暂不可用，请检查网络后刷新页面重试'); return false; }
+  return true;
+}
+
+// ========== Business Logic ==========
+async function init() {
+  if (!sb) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      onLogin();
+    }
+  } catch (e) {
+    console.error('会话恢复失败:', e);
+  }
+}
+
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+  document.getElementById('loginPanel').classList.toggle('active', isLogin);
+  document.getElementById('registerPanel').classList.toggle('active', !isLogin);
+  clearLoginForms();
+}
+
+function clearLoginForms() {
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('regEmail').value = '';
+  document.getElementById('regPassword').value = '';
+  document.getElementById('regConfirmPassword').value = '';
+  document.getElementById('securityQuestion').value = '';
+  document.getElementById('securityAnswer').value = '';
+}
+
+async function doLogin() {
+  if (!sbReady()) return;
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return alert('请填写邮箱和密码');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
+  if (password.length < 6) return alert('密码至少6位');
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) return alert('登录失败: ' + error.message);
+    currentUser = data.user;
+    onLogin();
+  } catch (e) {
+    console.error('登录异常:', e);
+    alert('操作失败，请重试');
+  }
+}
+
+async function doRegister() {
+  if (!sbReady()) return;
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
+  const securityQuestion = document.getElementById('securityQuestion').value;
+  const securityAnswer = document.getElementById('securityAnswer').value.trim();
+
+  if (!email || !password || !confirmPassword) return alert('请填写所有必填项');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('请输入有效的邮箱地址');
+  if (password.length < 6) return alert('密码至少6位');
+  if (password !== confirmPassword) return alert('两次输入的密码不一致');
+  if (!securityQuestion || !securityAnswer) return alert('请选择密保问题并填写答案');
+
+  try {
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) return alert('注册失败: ' + error.message);
+
+    // 同步注册暗流 dash.hfd.fund 账户
+    const darkflowBody = { username: email, password, security_question: securityQuestion, security_answer: securityAnswer };
+    let darkflowWarning = '';
+    try {
+      const dfResp = await fetch('/api/register-darkflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(darkflowBody)
+      });
+      const dfData = await dfResp.json();
+      if (!dfData.darkflow || !dfData.darkflow.success) {
+        const reason = (dfData.darkflow && dfData.darkflow.data && dfData.darkflow.data.message)
+          || (dfData.darkflow && dfData.darkflow.error)
+          || (dfData.darkflow ? 'HTTP ' + dfData.darkflow.status : '无响应');
+        console.error('[darkflow] 同步失败详情:', JSON.stringify(dfData.darkflow));
+        darkflowWarning = '\n\n暗流同步失败: ' + reason + '\n（不影响本站使用，可登录后重试）';
+      }
+    } catch (e) {
+      console.error('[darkflow] 同步异常:', e.message);
+      darkflowWarning = '\n\n暗流同步失败: ' + e.message + '\n（不影响本站使用，可登录后重试）';
+    }
+
+    if (data.session) {
+      currentUser = data.user;
+      onLogin();
+      return;
+    }
+    if (data.user) {
+      alert('注册成功，请查看邮箱确认（部分邮箱可能无需确认即可登录）' + darkflowWarning);
+      closeLoginModal();
+      return;
+    }
+    alert('注册请求已提交，请查看邮箱确认');
+    closeLoginModal();
+  } catch (e) {
+    console.error('注册异常:', e);
+    alert('操作失败，请重试');
+  }
+}
+
+async function onLogin() {
+  if (!sb) return;
+  document.getElementById('loginPrompt').style.display = 'none';
+  document.getElementById('mainFrame').style.display = 'block';
+  document.getElementById('btnLogin').style.display = 'none';
+  document.getElementById('btnLogout').style.display = 'inline-block';
+  document.getElementById('btnUpgrade').style.display = 'inline-block';
+  document.getElementById('userEmail').textContent = currentUser.email;
+  document.getElementById('banner').style.display = 'block';
+  closeLoginModal();
+
+  try {
+    const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
+      document.getElementById('planBadge').style.display = 'inline';
+      document.getElementById('btnUpgrade').style.display = 'none';
+      document.getElementById('banner').style.display = 'none';
+      document.getElementById('iframeWrapper').style.display = 'block';
+      loadFrame();
+    }
+  } catch (e) {
+    console.error('订阅查询失败:', e);
+  }
+}
+
+function loadFrame() {
+  var iframe = document.getElementById('mainFrame');
+  iframe.style.display = 'block';
+  // Load directly - user's browser already has login cookies
+  iframe.src = 'https://dash.hfd.fund/pro';
+}
+async function logout() {
+  if (!sbReady()) return;
+  try {
+    await sb.auth.signOut();
+  } catch (e) {
+    console.error('登出失败:', e);
+  }
+  currentUser = null;
+  document.getElementById('loginPrompt').style.display = 'block';
+  document.getElementById('mainFrame').style.display = 'none';
+  document.getElementById('mainFrame').src = '';
+  document.getElementById('btnLogin').style.display = 'inline-block';
+  document.getElementById('btnLogout').style.display = 'none';
+  document.getElementById('btnUpgrade').style.display = 'none';
+  document.getElementById('planBadge').style.display = 'none';
+  document.getElementById('banner').style.display = 'none';
+  document.getElementById('userEmail').textContent = '';
+}
+
+// 支付弹窗状态
+let selectedPlan = { money: '9.90', label: '7天体验' };
+let selectedPayMethod = 1; // 1=微信, 2=支付宝
+
+function selectPlan(money, label) {
+  selectedPlan.money = money;
+  selectedPlan.label = label;
+  document.getElementById('plan9').style.borderColor = money === '9.90' ? '#58a6ff' : '#30363d';
+  document.getElementById('plan29').style.borderColor = money === '29.90' ? '#58a6ff' : '#30363d';
+  // 切换方案时重置二维码显示
+  hideQr();
+}
+
+function selectPayMethod(method) {
+  selectedPayMethod = method;
+  document.getElementById('payMethodWechat').className = method === 1 ? 'btn btn-primary' : 'btn';
+  document.getElementById('payMethodAlipay').className = method === 2 ? 'btn btn-primary' : 'btn';
+  // 切换支付方式时重置二维码显示
+  hideQr();
+}
+
+function hideQr() {
+  document.getElementById('qrContainer').style.display = 'none';
+  document.getElementById('qrLoading').style.display = 'none';
+  document.getElementById('qrError').style.display = 'none';
+}
+
+let paymentPollTimer = null;
+
+async function doPay() {
+  if (!currentUser) return alert('请先登录');
+  const payType = selectedPayMethod;
+  const amount = selectedPlan.money;
+
+  // 清除旧的轮询
+  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
+
+  // 显示加载状态
+  document.getElementById('qrContainer').style.display = 'none';
+  document.getElementById('qrError').style.display = 'none';
+  document.getElementById('qrLoading').style.display = 'block';
+  document.getElementById('btnPayNow').disabled = true;
+
+  try {
+    const resp = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: currentUser.id, pay_type: payType, money: amount })
+    });
+    const result = await resp.json();
+
+    document.getElementById('qrLoading').style.display = 'none';
+    document.getElementById('btnPayNow').disabled = false;
+
+    // 兼容 qr_img (base64) 和 qr (URL) 两种返回格式
+    const qrSrc = result.qr_img || result.qr || result.url;
+    if (qrSrc) {
+      document.getElementById('qrImage').src = qrSrc;
+      document.getElementById('qrContainer').style.display = 'block';
+      // 二维码展示后启动订阅状态轮询
+      startPaymentPolling();
+    } else {
+      document.getElementById('qrError').textContent = '获取支付二维码失败: ' + (result.error || '暂无可用二维码，请稍后重试');
+      document.getElementById('qrError').style.display = 'block';
+    }
+  } catch (e) {
+    console.error('支付异常:', e);
+    document.getElementById('qrLoading').style.display = 'none';
+    document.getElementById('btnPayNow').disabled = false;
+    document.getElementById('qrError').textContent = '支付请求失败: ' + e.message;
+    document.getElementById('qrError').style.display = 'block';
+  }
+}
+
+function startPaymentPolling() {
+  let pollCount = 0;
+  const maxPolls = 100; // 最多轮询100次（约5分钟）
+  const pollInterval = 3000;
+
+  paymentPollTimer = setInterval(async () => {
+    pollCount++;
+    try {
+      const { data } = await sb.from('subscriptions').select('*').eq('user_id', currentUser.id).maybeSingle();
+      if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
+        // 支付成功：关闭弹窗 + 加载暗流内容
+        clearInterval(paymentPollTimer);
+        paymentPollTimer = null;
+        closePayModal();
+        document.getElementById('planBadge').style.display = 'inline';
+        document.getElementById('btnUpgrade').style.display = 'none';
+        document.getElementById('banner').style.display = 'none';
+        document.getElementById('iframeWrapper').style.display = 'block';
+        loadFrame();
+      }
+    } catch (e) {
+      console.error('轮询订阅状态失败:', e);
+    }
+    if (pollCount >= maxPolls) {
+      clearInterval(paymentPollTimer);
+      paymentPollTimer = null;
+    }
+  }, pollInterval);
+}
+
+function closePayModal() {
+  document.getElementById('payModal').classList.remove('active');
+  // 关闭弹窗时停止轮询
+  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
+}
+</script>
 </body>
 </html>
