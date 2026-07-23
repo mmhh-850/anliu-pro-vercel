@@ -319,7 +319,8 @@ async function onLogin() {
 function loadFrame() {
   var iframe = document.getElementById('mainFrame');
   iframe.style.display = 'block';
-  iframe.src = PROXY_BASE + '/pro';
+  // Load directly - user's browser already has login cookies
+  iframe.src = 'https://dash.hfd.fund/pro';
 }
 async function logout() {
   if (!sbReady()) return;
