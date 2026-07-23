@@ -323,12 +323,13 @@ function loadFrame() {
   fetch(PROXY_BASE + '/pro').then(function(r) { return r.text(); }).then(function(html) {
     var inject = '<base href="https://dash.hfd.fund/"><script>' +
       '(function(){' +
-      'var FW=window.fetch,XH=window.XMLHttpRequest,P="/api/proxy-api?p=";' +
+      'var FW=window.fetch,XH=window.XMLHttpRequest;' +
+      'var BASE=location.origin+"/api/proxy/";' +
       'function via(u){' +
         'var s=typeof u=="string"?u:(u.url||u.toString());' +
         'var m=s.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);' +
-        'if(m)return P+encodeURIComponent(m[1]);' +
-        'if(s.startsWith("/"))return P+encodeURIComponent(s.slice(1));' +
+        'if(m)return BASE+"_m/"+encodeURIComponent(m[1]);' +
+        'if(s.startsWith("/"))return BASE+s.slice(1);' +
         'return s;' +
       '}' +
       'window.fetch=function(u,o){return FW(via(u),o||{});};' +
