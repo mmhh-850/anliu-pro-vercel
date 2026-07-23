@@ -24,7 +24,7 @@ function request(url, method, headers, body) {
   });
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   var pp = req.query.path || [];
   var subPath = pp.join("/") || "";
   var targetUrl = "https://dash.hfd.fund/" + subPath;
@@ -34,10 +34,16 @@ export default async function handler(req, res) {
     ["content-type", "accept", "accept-encoding", "accept-language", "cookie", "authorization"]
       .forEach(function(k) { if (req.headers[k]) headers[k] = req.headers[k]; });
     
+    // Read body: try req.body first (Next.js auto-parses JSON), fallback to stream
     var body = null;
     if (req.body) {
-      body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
-      headers["content-type"] = headers["content-type"] || "application/json";
+      body = JSON.stringify(req.body);
+    } else if (req.method !== "GET" && req.method !== "HEAD") {
+      body = await new Promise(function(resolve) {
+        var chunks = [];
+        req.on("data", function(c) { chunks.push(c); });
+        req.on("end", function() { resolve(Buffer.concat(chunks).toString()); });
+      });
     }
     
     var result = await request(targetUrl, req.method, headers, body);
@@ -57,4 +63,4 @@ export default async function handler(req, res) {
   } catch(e) {
     res.status(502).send("Proxy error: " + e.message);
   }
-}
+};
