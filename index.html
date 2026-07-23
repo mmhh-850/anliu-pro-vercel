@@ -327,10 +327,12 @@ function loadFrame() {
       'var BASE=location.origin+"/api/proxy/";' +
       'function via(u){' +
         'var s=typeof u=="string"?u:(u.url||u.toString());' +
-        'var m=s.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.+)/);' +
-        'if(m)return BASE+"_m/"+encodeURIComponent(m[1]);' +
-        'if(s.startsWith("/"))return BASE+s.slice(1);' +
-        'return s;' +
+        // Strip absolute URL prefix, extract path
+        'var m=s.match(/^https?:\\/\\/dash\\.hfd\\.fund\\/(.*)/);' +
+        'if(m)s=m[1];' +
+        'else if(s.startsWith("/"))s=s.slice(1);' +
+        // URL-encode the path to make it a single segment
+        'return BASE+encodeURIComponent(s);' +
       '}' +
       'window.fetch=function(u,o){return FW(via(u),o||{});};' +
       'var O=XH.prototype.open;' +
