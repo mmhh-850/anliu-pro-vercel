@@ -2,6 +2,8 @@ const crypto = require("crypto");
 const XDD_APP_ID = "19997";
 const XDD_APP_SECRET = process.env.XDD_APP_SECRET;
 const XDD_GATEWAY = "https://gateway.xddpay.com";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 function md5(text) { return crypto.createHash("md5").update(text).digest("hex").toUpperCase(); }
 
@@ -31,11 +33,11 @@ module.exports = async function handler(req, res) {
     const notifyUrl = "https://www.anliupro.top/api/notify";
     const returnUrl = "https://www.anliupro.top";
 
-    // sign: NOT include notify_url/return_url (XDD docs say only core params)
+    // sign: only core params, NOT notify_url/return_url
     const signStr = "order_no=" + orderNo + "&subject=" + subject + "&pay_type=" + xddPayType + "&money=" + orderMoney + "&app_id=" + XDD_APP_ID + "&extra=" + extra + "&" + XDD_APP_SECRET;
     const sign = md5(signStr);
+    const debugSignStr = "order_no=" + orderNo + "&subject=" + subject + "&pay_type=" + xddPayType + "&money=" + orderMoney + "&app_id=" + XDD_APP_ID + "&extra=" + extra + "&SECRET";
 
-    // form: INCLUDE notify_url and return_url as extra fields
     const params = new URLSearchParams();
     params.append("order_no", orderNo);
     params.append("subject", subject);
@@ -58,11 +60,24 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: "支付网关异常", detail: respText.substring(0, 200) });
     }
 
-    if (!data.xddpay_order && data.msg && data.msg.includes("签名")) {
-      return res.json({ order_no: orderNo, error: "签名错误", xdd_msg: data.msg, debug_signStr: signStr.replace(XDD_APP_SECRET, "***") });
-    }
     if (!data.xddpay_order && data.msg && data.msg.includes("余额不足")) {
-      return res.json({ order_no: orderNo, error: "商户余额不足", xdd_msg: data.msg });
+      return res.json({ order_no: orderNo, error: "商户余额不足", xdd_msg: data.msg, debug_signStr: debugSignStr });
+    }
+    if (!data.xddpay_order && data.msg && data.msg.includes("签名")) {
+      return res.json({ order_no: orderNo, error: "签名错误", xdd_msg: data.msg, debug_signStr: debugSignStr });
+    }
+
+    // 异步存 Supabase
+    if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+      (async () => {
+        try {
+          const headers = { apikey: SUPABASE_SERVICE_KEY, Authorization: "Bearer " + SUPABASE_SERVICE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" };
+          await fetch(SUPABASE_URL + "/rest/v1/pay_orders", {
+            method: "POST", headers,
+            body: JSON.stringify({ user_id, order_no: orderNo, xddpay_order: data.xddpay_order, money: orderMoney, pay_type: pay_type, status: "pending", created_at: new Date().toISOString() })
+          });
+        } catch (e) { console.error("[pay] Supabase save failed:", e.message); }
+      })();
     }
 
     return res.json({
@@ -73,7 +88,8 @@ module.exports = async function handler(req, res) {
       money: data.money,
       realmoney: data.realmoney,
       msg: data.msg,
-      expires_in: data.expires_in
+      expires_in: data.expires_in,
+      debug_signStr: debugSignStr
     });
   } catch (e) {
     return res.status(500).json({ error: e.message, stack: e.stack ? e.stack.substring(0, 500) : "" });
